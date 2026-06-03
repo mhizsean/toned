@@ -8,6 +8,7 @@ import {
 } from "@expo-google-fonts/dm-sans";
 import { colors, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
+import { Ionicons } from "@expo/vector-icons";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -49,10 +50,42 @@ export default function RootLayout() {
         },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "HOME" }} />
-      <Tabs.Screen name="plan" options={{ title: "PLAN" }} />
-      <Tabs.Screen name="history" options={{ title: "HISTORY" }} />
-      <Tabs.Screen name="prs" options={{ title: "PRs" }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "HOME",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="plan"
+        options={{
+          title: "PLAN",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: "HISTORY",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="time-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="prs"
+        options={{
+          title: "PRs",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="trophy-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
