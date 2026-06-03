@@ -8,6 +8,7 @@ import {
 import { colors, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 export default function HomeScreen() {
   const { sessions, activeSession, startSession } = useWorkoutStore();
@@ -72,12 +73,21 @@ export default function HomeScreen() {
                   {activeSession.exercises.length !== 1 ? "s" : ""} logged
                 </Text>
               </View>
-              <TouchableOpacity style={s.resumeBtn}>
+              <TouchableOpacity
+                style={s.resumeBtn}
+                onPress={() => router.push("/session")}
+              >
                 <Text style={s.resumeBtnText}>RESUME →</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={s.startBtn} onPress={startSession}>
+            <TouchableOpacity
+              style={s.startBtn}
+              onPress={() => {
+                startSession();
+                router.push("/session");
+              }}
+            >
               <Text style={s.startBtnText}>＋ START WORKOUT</Text>
             </TouchableOpacity>
           )}

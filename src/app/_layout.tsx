@@ -86,6 +86,12 @@ export default function RootLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="session"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
