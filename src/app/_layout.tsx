@@ -7,6 +7,7 @@ import {
   DMSans_500Medium,
 } from "@expo-google-fonts/dm-sans";
 import { colors, fonts } from "../constants/theme";
+import { useWorkoutStore } from "../store/workoutStore";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,9 +18,12 @@ export default function RootLayout() {
     DMSans_500Medium,
   });
 
+  const loadSessions = useWorkoutStore((state) => state.loadSessions);
+
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
+      loadSessions();
     }
   }, [fontsLoaded]);
 
