@@ -70,6 +70,36 @@ export default function HomeScreen() {
           {sessions.length > 0 && (
             <View style={s.recentWrap}>
               <Text style={s.sectionLabel}>RECENT SESSIONS</Text>
+
+              {sessions.slice(0, 3).map((session) => (
+                <View style={s.sessionCard} key={session.id}>
+                  <View style={s.sessionCardTop}>
+                    <Text>{session.date}</Text>
+
+                    <Text style={s.sessionVol}>
+                      {Math.round(
+                        session.exercises.reduce(
+                          (acc, exercise) =>
+                            acc +
+                            exercise.sets.reduce(
+                              (acc, set) => acc + set.weight * set.reps,
+                              0,
+                            ),
+                          0,
+                        ),
+                      )}
+                      kg
+                    </Text>
+                  </View>
+                  <View style={s.tagRow}>
+                    {session.exercises.map((exercise, i) => (
+                      <View style={s.tag} key={i}>
+                        <Text style={s.tagText}>{exercise.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
             </View>
           )}
         </ScrollView>
@@ -152,5 +182,46 @@ const s = StyleSheet.create({
     color: colors.muted,
     letterSpacing: 2,
     marginBottom: 10,
+  },
+  sessionCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 8,
+  },
+  sessionCardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  sessionDate: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.text,
+  },
+  sessionVol: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.amber,
+  },
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  tag: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  tagText: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    color: colors.muted,
   },
 });
