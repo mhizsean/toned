@@ -63,9 +63,24 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={s.startBtn} onPress={startSession}>
-            <Text style={s.startBtnText}>START WORKOUT</Text>
-          </TouchableOpacity>
+          {activeSession ? (
+            <View style={s.activeBanner}>
+              <View>
+                <Text style={s.activeBannerTitle}>SESSION IN PROGRESS</Text>
+                <Text style={s.activeBannerSub}>
+                  {activeSession.exercises.length} exercise
+                  {activeSession.exercises.length !== 1 ? "s" : ""} logged
+                </Text>
+              </View>
+              <TouchableOpacity style={s.resumeBtn}>
+                <Text style={s.resumeBtnText}>RESUME →</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={s.startBtn} onPress={startSession}>
+              <Text style={s.startBtnText}>＋ START WORKOUT</Text>
+            </TouchableOpacity>
+          )}
 
           {sessions.length > 0 && (
             <View style={s.recentWrap}>
@@ -223,5 +238,39 @@ const s = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 10,
     color: colors.muted,
+  },
+  activeBanner: {
+    backgroundColor: "#0c0900",
+    borderWidth: 1,
+    borderColor: colors.amber + "44",
+    borderRadius: 8,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  activeBannerTitle: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.amber,
+    letterSpacing: 1,
+  },
+  activeBannerSub: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.muted,
+    marginTop: 3,
+  },
+  resumeBtn: {
+    backgroundColor: colors.amber,
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  resumeBtnText: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.background,
+    letterSpacing: 1,
   },
 });
