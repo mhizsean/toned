@@ -7,10 +7,12 @@ import {
   TextInput,
 } from "react-native";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { colors, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import ExercisePicker from "../components/ExercisePicker";
+
 export default function SessionScreen() {
   const {
     activeSession,
@@ -27,8 +29,14 @@ export default function SessionScreen() {
   >({});
   const [showPicker, setShowPicker] = useState(false);
 
+  useEffect(() => {
+    if (!activeSession) {
+      router.replace("/");
+      return;
+    }
+  }, [activeSession]);
+
   if (!activeSession) {
-    router.replace("/");
     return null;
   }
 
@@ -168,6 +176,15 @@ export default function SessionScreen() {
             </TouchableOpacity>
           )}
         </ScrollView>
+        <ExercisePicker
+          visible={showPicker}
+          onClose={() => setShowPicker(false)}
+          onSelect={(name) => {
+            addExercise(name);
+            setExpandedEx(activeSession.exercises.length);
+          }}
+          addedExercises={activeSession.exercises.map((ex) => ex.name)}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );

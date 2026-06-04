@@ -99,9 +99,17 @@ export default function HomeScreen() {
               {sessions.slice(0, 3).map((session) => (
                 <View style={s.sessionCard} key={session.id}>
                   <View style={s.sessionCardTop}>
-                    <Text>{session.date}</Text>
+                    <Text style={s.sessionDate}>
+                      {new Date(session.date)
+                        .toLocaleDateString("en-GB", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                        })
+                        .toUpperCase()}
+                    </Text>
 
-                    <Text style={s.sessionVol}>
+                    {/* <Text style={s.sessionVol}>
                       {Math.round(
                         session.exercises.reduce(
                           (acc, exercise) =>
@@ -113,7 +121,12 @@ export default function HomeScreen() {
                           0,
                         ),
                       )}
-                      kg
+                      kg Vol
+                    </Text> */}
+
+                    <Text style={s.sessionVol}>
+                      {session.exercises.length} exercise
+                      {session.exercises.length !== 1 ? "s" : ""}
                     </Text>
                   </View>
                   <View style={s.tagRow}>
