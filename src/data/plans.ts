@@ -1,0 +1,145 @@
+export const EXERCISE_CATEGORIES = {
+  '🍑 Glutes & Legs': [
+    'Hip Thrust (Smith)',
+    'Sumo Squat',
+    'RDL',
+    'Cable Kickback',
+    'Leg Press',
+    'Hamstring Curl',
+    'Walking Lunge',
+    'Hip Abduction',
+    'Bulgarian Split Squat',
+    'Glute Bridge',
+  ],
+  '💪 Upper Body': [
+    'Lat Pulldown',
+    'Seated Cable Row',
+    'Dumbbell Row',
+    'Rear Delt Fly',
+    'Shoulder Press',
+    'Face Pull',
+    'Chest Press',
+    'Bicep Curl',
+    'Tricep Pushdown',
+    'Push-Up',
+  ],
+  '🧘 Core & Posture': [
+    'Plank',
+    'Dead Bug',
+    'Bird Dog',
+    'Vacuum Hold',
+    'Superman Hold',
+    'Side Plank',
+    'Ab Wheel',
+    'Pallof Press',
+  ],
+  '🔥 Full Body': [
+    'Goblet Squat',
+    'Dumbbell Thruster',
+    'Step-Up',
+    'Mountain Climber',
+    'Burpee',
+    'Kettlebell Swing',
+  ],
+};
+
+export type PlannedExercise = {
+  name: string;
+  sets: number;
+  reps: string;
+  note?: string;
+};
+
+export type DayPlan = {
+  day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+  type: 'gym' | 'home' | 'rest';
+  focus: string;
+  exercises: PlannedExercise[];
+};
+
+export const weeklyPlan: DayPlan[] = [
+  {
+    day: 'Mon',
+    type: 'gym',
+    focus: 'Glutes & Legs (Volume)',
+    exercises: [
+      { name: 'Hip Thrust (Smith)', sets: 3, reps: '12–15', note: 'Squeeze at top for 1s' },
+      { name: 'Sumo Squat', sets: 3, reps: '12–15' },
+      { name: 'Cable Kickback', sets: 3, reps: '15 each leg' },
+      { name: 'Leg Press', sets: 3, reps: '12–15' },
+      { name: 'Hamstring Curl', sets: 3, reps: '12–15' },
+      { name: 'Hip Abduction', sets: 3, reps: '15–20' },
+    ],
+  },
+  {
+    day: 'Tue',
+    type: 'home',
+    focus: 'Core + Posture Flow',
+    exercises: [
+      { name: 'Plank', sets: 3, reps: '30–45s' },
+      { name: 'Dead Bug', sets: 3, reps: '10 each side' },
+      { name: 'Bird Dog', sets: 3, reps: '10 each side' },
+      { name: 'Vacuum Hold', sets: 3, reps: '20–30s', note: 'Key for waist' },
+      { name: 'Superman Hold', sets: 3, reps: '12–15' },
+      { name: 'Side Plank', sets: 3, reps: '20–30s each' },
+    ],
+  },
+  {
+    day: 'Wed',
+    type: 'gym',
+    focus: 'Upper Body + Posture',
+    exercises: [
+      { name: 'Lat Pulldown', sets: 3, reps: '12–15' },
+      { name: 'Seated Cable Row', sets: 3, reps: '12' },
+      { name: 'Rear Delt Fly', sets: 3, reps: '15', note: 'Light weight, feel the squeeze' },
+      { name: 'Face Pull', sets: 3, reps: '15–20' },
+      { name: 'Shoulder Press', sets: 3, reps: '10–12' },
+      { name: 'Bicep Curl', sets: 3, reps: '12' },
+    ],
+  },
+  {
+    day: 'Thu',
+    type: 'rest',
+    focus: 'Rest — walk or stretch only',
+    exercises: [],
+  },
+  {
+    day: 'Fri',
+    type: 'gym',
+    focus: 'Glutes & Legs (Heavy)',
+    exercises: [
+      { name: 'Hip Thrust (Smith)', sets: 4, reps: '8–10', note: 'Heavier than Monday' },
+      { name: 'RDL', sets: 3, reps: '10–12' },
+      { name: 'Bulgarian Split Squat', sets: 3, reps: '10 each leg' },
+      { name: 'Walking Lunge', sets: 3, reps: '12 each leg' },
+      { name: 'Glute Bridge', sets: 3, reps: '15–20' },
+      { name: 'Hamstring Curl', sets: 3, reps: '12' },
+    ],
+  },
+  {
+    day: 'Sat',
+    type: 'home',
+    focus: 'Full Body Tone + Core',
+    exercises: [
+      { name: 'Glute Bridge', sets: 3, reps: '20' },
+      { name: 'Push-Up', sets: 3, reps: '10–15' },
+      { name: 'Mountain Climber', sets: 3, reps: '20 each leg' },
+      { name: 'Dead Bug', sets: 3, reps: '10 each side' },
+      { name: 'Vacuum Hold', sets: 3, reps: '30s' },
+      { name: 'Bird Dog', sets: 3, reps: '10 each side' },
+    ],
+  },
+  {
+    day: 'Sun',
+    type: 'gym',
+    focus: 'Full Body + Cardio Finisher',
+    exercises: [
+      { name: 'Goblet Squat', sets: 3, reps: '12' },
+      { name: 'Dumbbell Row', sets: 3, reps: '12 each side' },
+      { name: 'Step-Up', sets: 3, reps: '12 each leg' },
+      { name: 'Shoulder Press', sets: 3, reps: '12' },
+      { name: 'Kettlebell Swing', sets: 3, reps: '15' },
+      { name: 'Mountain Climber', sets: 3, reps: '30s' },
+    ],
+  },
+];
