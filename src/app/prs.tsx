@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { colors, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
+import { formatDate } from "../constants/storage";
 
 export default function PRsScreen() {
   const { sessions } = useWorkoutStore();
@@ -52,15 +53,7 @@ export default function PRsScreen() {
             <View key={name} style={s.card}>
               <View style={s.cardLeft}>
                 <Text style={s.exName}>{name}</Text>
-                <Text style={s.prDate}>
-                  {new Date(pr.date)
-                    .toLocaleDateString("en-GB", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                    })
-                    .toUpperCase()}
-                </Text>
+                <Text style={s.prDate}>{formatDate(pr.date)}</Text>
               </View>
               <View style={s.cardRight}>
                 <Text style={s.prWeight}>{pr.weight}kg</Text>

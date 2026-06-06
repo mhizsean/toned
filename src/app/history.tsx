@@ -9,6 +9,7 @@ import { colors, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { useState } from "react";
+import { formatDate } from "../constants/storage";
 
 export default function HistoryScreen() {
   const { sessions } = useWorkoutStore();
@@ -50,16 +51,7 @@ export default function HistoryScreen() {
                 activeOpacity={0.8}
               >
                 <View style={s.cardTop}>
-                  <Text style={s.cardDate}>
-                    {" "}
-                    {new Date(session.date)
-                      .toLocaleDateString("en-GB", {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "short",
-                      })
-                      .toUpperCase()}
-                  </Text>
+                  <Text style={s.cardDate}>{formatDate(session.date)}</Text>
                   <Text style={s.cardWeight}>top {topWeight}kg</Text>
                 </View>
 
