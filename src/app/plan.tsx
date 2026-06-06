@@ -8,16 +8,9 @@ import {
 import { useState } from "react";
 import { colors, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { DayPlan, EXERCISE_CATEGORIES, weeklyPlan } from "../data/plans";
-
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
-const TODAY = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
-
-const TYPE_BADGE: Record<DayPlan["type"], { label: string; color: string }> = {
-  gym: { label: "🏋🏽 Gym", color: colors.amber },
-  home: { label: "🏠 Home", color: "#60a5fa" },
-  rest: { label: "😴 Rest", color: colors.muted },
-};
+import { EXERCISE_CATEGORIES, weeklyPlan } from "../data/plans";
+import { DayPlan } from "../types";
+import { DAYS, TODAY, TYPE_BADGE } from "../constants/planning";
 
 export default function PlanScreen() {
   const [tab, setTab] = useState<"schedule" | "library">("schedule");
