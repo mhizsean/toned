@@ -1,3 +1,5 @@
+import { DayPlan } from "../types";
+
 export const EXERCISE_CATEGORIES = {
   '🍑 Glutes & Legs': [
     'Hip Thrust (Smith)',
@@ -41,20 +43,6 @@ export const EXERCISE_CATEGORIES = {
     'Burpee',
     'Kettlebell Swing',
   ],
-};
-
-export type PlannedExercise = {
-  name: string;
-  sets: number;
-  reps: string;
-  note?: string;
-};
-
-export type DayPlan = {
-  day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
-  type: 'gym' | 'home' | 'rest';
-  focus: string;
-  exercises: PlannedExercise[];
 };
 
 export const weeklyPlan: DayPlan[] = [

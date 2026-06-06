@@ -1,21 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export type WorkoutSet = {
-  weight: number;
-  reps: number;
-};
-
-export type Exercise = {
-  name: string;
-  sets: WorkoutSet[];
-};
-
-export type Session = {
-  id: string;
-  date: string;
-  exercises: Exercise[];
-};
+import { Session, WorkoutSet } from '../types';
 
 type WorkoutStore = {
   sessions: Session[];
