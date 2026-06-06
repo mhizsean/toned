@@ -3,29 +3,14 @@ import { colors, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { formatDate } from "../constants/storage";
+import { calculatePRs } from "../utils/prCalculations";
 
 export default function PRsScreen() {
   const { sessions } = useWorkoutStore();
 
-  const prs: Record<string, { weight: number; reps: number; date: string }> =
-    {};
-
-  console.log("sessions", JSON.stringify(sessions, null, 2));
-  sessions.forEach((session) =>
-    session.exercises.forEach((ex) =>
-      ex.sets.forEach((set) => {
-        if (!prs[ex.name] || set.weight > prs[ex.name].weight) {
-          prs[ex.name] = {
-            weight: set.weight,
-            reps: set.reps,
-            date: session.date,
-          };
-        }
-      }),
-    ),
+  const entries = Object.entries(calculatePRs(sessions)).sort(
+    (a, b) => b[1].weight - a[1].weight,
   );
-
-  const entries = Object.entries(prs).sort((a, b) => b[1].weight - a[1].weight);
 
   if (entries.length === 0) {
     return (

@@ -11,6 +11,7 @@ import {
   SESSION_DATE_FORMAT,
 } from "../constants/storage";
 import { useWorkoutStore } from "../store/workoutStore";
+import { calculatePRs } from "../utils/prCalculations";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
@@ -21,19 +22,7 @@ export default function HomeScreen() {
     (session) => new Date(session.date) > new Date(Date.now() - 7 * 86_400_000),
   ).length;
 
-  const totalPRs = () => {
-    const prs: Record<string, number> = {};
-    sessions.forEach((session) =>
-      session.exercises.forEach((exercise) =>
-        exercise.sets.forEach((set) => {
-          if (!prs[exercise.name] || set.weight > prs[exercise.name]) {
-            prs[exercise.name] = set.weight;
-          }
-        }),
-      ),
-    );
-    return Object.keys(prs).length;
-  };
+  const totalPRs = Object.keys(calculatePRs(sessions)).length;
 
   return (
     <SafeAreaProvider>
@@ -54,7 +43,7 @@ export default function HomeScreen() {
               <Text style={s.statLabel}>THIS WEEK</Text>
             </View>
             <View style={s.statBox}>
-              <Text style={s.statNum}>{totalPRs()}</Text>
+              <Text style={s.statNum}>{totalPRs}</Text>
               <Text style={s.statLabel}>PRs</Text>
             </View>
           </View>
