@@ -6,6 +6,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { colors, fonts } from "../constants/theme";
+import {
+  formatDate,
+  SESSION_DATE_FORMAT,
+} from "../constants/storage";
 import { useWorkoutStore } from "../store/workoutStore";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -37,16 +41,7 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={s.scroll}>
           <View style={s.header}>
             <Text style={s.wordmark}>TONED</Text>
-            <Text style={s.date}>
-              {new Date()
-                .toLocaleDateString("en-GB", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })
-                .toUpperCase()}
-            </Text>
+            <Text style={s.date}>{formatDate()}</Text>
           </View>
 
           <View style={s.statsRow}>
@@ -100,13 +95,7 @@ export default function HomeScreen() {
                 <View style={s.sessionCard} key={session.id}>
                   <View style={s.sessionCardTop}>
                     <Text style={s.sessionDate}>
-                      {new Date(session.date)
-                        .toLocaleDateString("en-GB", {
-                          weekday: "short",
-                          day: "numeric",
-                          month: "short",
-                        })
-                        .toUpperCase()}
+                      {formatDate(session.date, SESSION_DATE_FORMAT)}
                     </Text>
 
                     {/* <Text style={s.sessionVol}>
@@ -263,7 +252,7 @@ const s = StyleSheet.create({
     color: colors.muted,
   },
   activeBanner: {
-    backgroundColor: "#0c0900",
+    backgroundColor: colors.activeBanner,
     borderWidth: 1,
     borderColor: colors.amber + "44",
     borderRadius: 8,

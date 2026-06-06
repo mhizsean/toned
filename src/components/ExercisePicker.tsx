@@ -101,11 +101,11 @@ export default function ExercisePicker({
 const s = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "#000000cc",
+    backgroundColor: colors.bgOverlay,
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#111111",
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -154,7 +154,7 @@ const s = StyleSheet.create({
     gap: 6,
   },
   pill: {
-    backgroundColor: "#1c1c1c",
+    backgroundColor: colors.pillBackground,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 20,
