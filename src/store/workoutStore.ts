@@ -12,6 +12,7 @@ type WorkoutStore = {
   finishSession: () => void;
   discardSession: () => void;
   loadSessions: () => void;
+  deleteSession: (id: string) => void;
 };
 
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
@@ -76,4 +77,11 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   discardSession: () => {
     set({ activeSession: null });
   },
+
+  deleteSession: async (id: string) => {
+  const { sessions } = get();
+  const updated = sessions.filter((s) => s.id !== id);
+  set({ sessions: updated });
+  await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
+},
 }));
