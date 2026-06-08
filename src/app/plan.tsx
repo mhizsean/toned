@@ -231,12 +231,12 @@ const styles = StyleSheet.create({
   dayRow: {
     marginBottom: 16,
     marginHorizontal: -4,
-    maxHeight: 70,
+    maxHeight: 45,
   },
   dayPill: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 50,
+    borderRadius: 10,
     backgroundColor: colors.surface,
     marginHorizontal: 4,
     borderWidth: 1,
