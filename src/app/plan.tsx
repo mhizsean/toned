@@ -38,7 +38,7 @@ export default function PlanScreen() {
               <Text
                 style={[styles.tabLabel, tab === t && styles.tabLabelActive]}
               >
-                {tab === "schedule" ? "SCHEDULE" : "LIBRARY"}
+                {t === "schedule" ? "SCHEDULE" : "LIBRARY"}
               </Text>
             </TouchableOpacity>
           ))}
