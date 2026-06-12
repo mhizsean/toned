@@ -20,11 +20,13 @@ export default function RootLayout() {
   });
 
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
+  const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
 
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
       loadSessions();
+      loadLibrary();
     }
   }, [fontsLoaded]);
 
