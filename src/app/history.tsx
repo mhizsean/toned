@@ -79,9 +79,9 @@ export default function HistoryScreen() {
               <View style={s.cardTop}>
                 <Text style={s.cardDate}>{formatDate(session.date)}</Text>
                 <View style={s.cardTopRight}>
-                  {topWeight && (
+                  {topWeight > 0 ? (
                     <Text style={s.cardWeight}>top {topWeight}kg</Text>
-                  )}
+                  ) : null}
                   <TouchableOpacity
                     style={s.deleteBtn}
                     onPress={(e) => {

@@ -21,11 +21,18 @@
         "backgroundColor": "#080808"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.mzsean.Toned"
     },
     "plugins": [
       "expo-router",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c71a89b9-fef3-43a7-9e22-189e5dce73dd"
+      }
+    }
   }
 }
