@@ -11,14 +11,29 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { EXERCISE_CATEGORIES, weeklyPlan } from "../data/plans";
 import { DayPlan } from "../types";
 import { DAYS, TODAY, TYPE_BADGE } from "../constants/planning";
+import { useWorkoutStore } from "../store/workoutStore";
+import AddExerciseSheet from "../components/AddExerciseSheet";
 
 export default function PlanScreen() {
   const [tab, setTab] = useState<"schedule" | "library">("schedule");
   const [selectedDay, setSelectedDay] = useState<DayPlan["day"]>(TODAY);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [showAddSheet, setShowAddSheet] = useState(false);
+  const { libraryExercises } = useWorkoutStore();
 
   const dayPlan = weeklyPlan.find((d) => d.day === selectedDay)!;
   const badge = TYPE_BADGE[dayPlan.type];
+
+  const libCategory = Object.entries(EXERCISE_CATEGORIES).reduce(
+    (acc, [cat, exs]) => {
+      const userExs = exs.filter((ex) => libraryExercises.includes(ex));
+      if (userExs.length > 0) {
+        acc[cat] = userExs;
+      }
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
 
   return (
     <SafeAreaProvider>
@@ -141,24 +156,33 @@ export default function PlanScreen() {
         {/* library tab */}
         {tab === "library" && (
           <View style={styles.libWrap}>
-            {Object.entries(EXERCISE_CATEGORIES).map(
-              ([category, exercises]) => {
-                const open = expandedCat === category;
+            {libraryExercises.length === 0 ? (
+              <View style={styles.libEmpty}>
+                <Text style={styles.libEmptyTitle}>NO EXERCISES YET</Text>
+                <Text style={styles.libEmptySub}>
+                  Build your own library to use when logging sessions
+                </Text>
+              </View>
+            ) : (
+              Object.entries(libCategory).map(([cat, exs]) => {
+                const open = expandedCat === cat;
                 return (
-                  <View key={category} style={styles.catCard}>
+                  <View key={cat} style={styles.catCard}>
                     <TouchableOpacity
+                      onPress={() => setExpandedCat(open ? null : cat)}
                       style={styles.catHeader}
-                      onPress={() => setExpandedCat(open ? null : category)}
                     >
-                      <Text style={styles.catTitle}>{category}</Text>
+                      <Text style={styles.catTitle}>{cat}</Text>
                       <Text style={styles.catCount}>
-                        {open ? "▲" : `${exercises.length} exercises ▼`}
+                        {open
+                          ? "▲"
+                          : `${exs.length} exercise${exs.length !== 1 ? "s" : ""} ▼`}
                       </Text>
                     </TouchableOpacity>
                     {open && (
                       <View style={styles.catBody}>
-                        {exercises.map((ex, i) => (
-                          <View style={styles.libExRow} key={i}>
+                        {exs.map((ex, i) => (
+                          <View key={i} style={styles.libExRow}>
                             <Text style={styles.libExName}>{ex}</Text>
                           </View>
                         ))}
@@ -166,10 +190,22 @@ export default function PlanScreen() {
                     )}
                   </View>
                 );
-              },
+              })
             )}
+
+            <TouchableOpacity
+              style={styles.addExercisesBtn}
+              onPress={() => setShowAddSheet(true)}
+            >
+              <Text style={styles.addExercisesBtnText}>+ ADD EXERCISES</Text>
+            </TouchableOpacity>
           </View>
         )}
+
+        <AddExerciseSheet
+          visible={showAddSheet}
+          onClose={() => setShowAddSheet(false)}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -390,5 +426,38 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 14,
     color: colors.muted,
+  },
+  libEmpty: {
+    alignItems: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  libEmptyTitle: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    color: colors.border,
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  libEmptySub: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  addExercisesBtn: {
+    borderWidth: 1,
+    borderColor: colors.amber + "66",
+    borderRadius: 8,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  addExercisesBtnText: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.amber,
+    letterSpacing: 1,
   },
 });
