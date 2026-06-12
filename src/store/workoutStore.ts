@@ -13,11 +13,16 @@ type WorkoutStore = {
   discardSession: () => void;
   loadSessions: () => void;
   deleteSession: (id: string) => void;
+  libraryExercises: string[];
+  addToLibrary: (name: string) => void;
+  removeFromLibrary: (name: string) => void;
+  loadLibrary: () => void;
 };
 
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   sessions: [],
   activeSession: null,
+  libraryExercises: [],
 
   loadSessions: async () => {
     try {
@@ -83,5 +88,29 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   const updated = sessions.filter((s) => s.id !== id);
   set({ sessions: updated });
   await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
+},
+
+loadLibrary: async () => {
+  try {
+    const data = await AsyncStorage.getItem('toned_library');
+    if (data) set({ libraryExercises: JSON.parse(data) });
+  } catch (e) {
+    console.error('Failed to load library', e);
+  }
+},
+
+addToLibrary: async (name) => {
+  const { libraryExercises } = get();
+  if (libraryExercises.includes(name)) return;
+  const updated = [...libraryExercises, name];
+  set({ libraryExercises: updated });
+  await AsyncStorage.setItem('toned_library', JSON.stringify(updated));
+},
+
+removeFromLibrary: async (name) => {
+  const { libraryExercises } = get();
+  const updated = libraryExercises.filter((ex) => ex !== name);
+  set({ libraryExercises: updated });
+  AsyncStorage.setItem('toned_library', JSON.stringify(updated));
 },
 }));
