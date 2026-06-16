@@ -21,9 +21,6 @@ export default function AddExerciseSheet({ visible, onClose }: Props) {
   const { libraryExercises, addToLibrary, removeFromLibrary } =
     useWorkoutStore();
   const [search, setSearch] = useState("");
-  const filteredExercises = libraryExercises.filter((ex: string) =>
-    ex.toLowerCase().includes(search.toLowerCase()),
-  );
 
   const filteredCats = search
     ? Object.fromEntries(
