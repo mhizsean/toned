@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Session, WorkoutSet } from '../types';
+import { DaySchedule, Session, WeeklySchedule, WorkoutSet } from '../types';
 
 type WorkoutStore = {
   sessions: Session[];
@@ -17,12 +17,16 @@ type WorkoutStore = {
   addToLibrary: (name: string) => void;
   removeFromLibrary: (name: string) => void;
   loadLibrary: () => void;
+  weeklySchedule: WeeklySchedule;
+  loadSchedule: () => void;
+  saveDaySchedule: (day: string, schedule: DaySchedule) => void;
 };
 
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   sessions: [],
   activeSession: null,
   libraryExercises: [],
+  weeklySchedule: {},
 
   loadSessions: async () => {
     try {
@@ -112,5 +116,22 @@ removeFromLibrary: async (name) => {
   const updated = libraryExercises.filter((ex) => ex !== name);
   set({ libraryExercises: updated });
   AsyncStorage.setItem('toned_library', JSON.stringify(updated));
+},
+
+
+loadSchedule: async () => {
+  try {
+    const data = await AsyncStorage.getItem('toned_schedule');
+    if (data) set({ weeklySchedule: JSON.parse(data) });
+  } catch (e) {
+    console.error('Failed to load schedule', e);
+  }
+},
+
+saveDaySchedule: async (day, schedule) => {
+  const { weeklySchedule } = get();
+  const updated = { ...weeklySchedule, [day]: schedule };
+  set({ weeklySchedule: updated });
+  await AsyncStorage.setItem('toned_schedule', JSON.stringify(updated));
 },
 }));

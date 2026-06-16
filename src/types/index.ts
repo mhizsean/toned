@@ -27,3 +27,21 @@ export type DayPlan = {
   focus: string;
   exercises: PlannedExercise[];
 };
+
+export type DayType = 'gym' | 'home' | 'rest';
+
+export type PlannedScheduleExercise = {
+ name: string;
+  sets: number;
+  reps: string;
+}
+
+export type DaySchedule = {
+  type: DayType;
+  focus: string;
+  exercises: PlannedScheduleExercise[];
+};
+
+export type WeeklySchedule = {
+  [day: string]: DaySchedule;
+};
