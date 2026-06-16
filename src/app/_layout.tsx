@@ -21,12 +21,14 @@ export default function RootLayout() {
 
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
+  const loadSchedule = useWorkoutStore((state) => state.loadSchedule);
 
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
       loadSessions();
       loadLibrary();
+      loadSchedule();
     }
   }, [fontsLoaded]);
 
@@ -94,6 +96,8 @@ export default function RootLayout() {
           href: null,
         }}
       />
+
+      <Tabs.Screen name="day-setup" options={{ href: null }} />
     </Tabs>
   );
 }
