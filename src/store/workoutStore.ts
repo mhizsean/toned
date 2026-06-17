@@ -156,7 +156,12 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   finishSession: async () => {
     const { activeSession, sessions } = get();
     if (!activeSession) return;
-    const updated = [activeSession, ...sessions];
+
+    const exercises = activeSession.exercises.filter((ex) => ex.sets.length > 0);
+    if (exercises.length === 0) return;
+
+    const completed: Session = { ...activeSession, exercises };
+    const updated = [completed, ...sessions];
     set({ sessions: updated, activeSession: null });
     await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
     await persistActiveSession(null);

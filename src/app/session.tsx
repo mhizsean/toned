@@ -71,19 +71,59 @@ export default function SessionScreen() {
     setInputs((prev) => ({ ...prev, [exIdx]: { w: "", r: "" } }));
   };
 
+  const hasLoggedSets = activeSession.exercises.some((ex) => ex.sets.length > 0);
+  const unfinishedNames = activeSession.exercises
+    .filter((ex) => ex.sets.length === 0)
+    .map((ex) => ex.name);
+
+  const completeFinish = () => {
+    finishSession();
+    router.replace("/");
+  };
+
   const handleFinish = () => {
+    if (!hasLoggedSets) {
+      Alert.alert(
+        "Nothing logged yet",
+        "You haven't recorded any sets. Discard this session instead?",
+        [
+          { text: "Keep going", style: "cancel" },
+          {
+            text: "Discard",
+            style: "destructive",
+            onPress: () => {
+              discardSession();
+              router.replace("/");
+            },
+          },
+        ],
+      );
+      return;
+    }
+
+    if (unfinishedNames.length > 0) {
+      const listed =
+        unfinishedNames.length <= 3
+          ? unfinishedNames.join(", ")
+          : `${unfinishedNames.slice(0, 3).join(", ")} +${unfinishedNames.length - 3} more`;
+
+      Alert.alert(
+        "Incomplete exercises",
+        `You haven't logged sets for ${listed}. Only exercises with sets will be saved.`,
+        [
+          { text: "Keep going", style: "cancel" },
+          { text: "Save progress", onPress: completeFinish },
+        ],
+      );
+      return;
+    }
+
     Alert.alert(
       "Finish Session",
       "Are you sure you want to finish your session?",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Finish",
-          onPress: () => {
-            finishSession();
-            router.replace("/");
-          },
-        },
+        { text: "Finish", onPress: completeFinish },
       ],
     );
   };

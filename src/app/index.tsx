@@ -18,6 +18,7 @@ import { WorkoutSet } from "../types";
 import TodayPlanSheet from "../components/TodayPlanSheet";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
 import { pluralize, getDayFocusLabel } from "../utils/text";
+import { isTodayPlanComplete } from "../utils/todayWorkout";
 
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
@@ -31,6 +32,7 @@ export default function HomeScreen() {
 
   const todayPlan = weeklySchedule[TODAY];
   const totalPRs = Object.keys(calculatePRs(sessions)).length;
+  const todayComplete = isTodayPlanComplete(todayPlan, sessions);
 
   const handleStartSession = () => {
     if (
@@ -107,6 +109,13 @@ export default function HomeScreen() {
               <Text style={s.resumeBtnText}>RESUME →</Text>
             </TouchableOpacity>
           </View>
+        ) : todayComplete ? (
+          <View style={s.doneBanner}>
+            <Text style={s.doneBannerTitle}>DONE FOR TODAY ✓</Text>
+            <Text style={s.doneBannerSub}>
+              You crushed it — rest up and come back tomorrow.
+            </Text>
+          </View>
         ) : (
           <TouchableOpacity style={s.startBtn} onPress={handleStartSession}>
             <Text style={s.startBtnText}>＋ START WORKOUT</Text>
@@ -115,8 +124,9 @@ export default function HomeScreen() {
         {todayPlan && todayPlan.type !== "rest" && (
           <View style={s.todayPlanBanner}>
             <Text style={s.todayPlanText}>
-              📋 {getDayFocusLabel(todayPlan)} · {todayPlan.exercises.length}{" "}
-              exercises loaded
+              {todayComplete
+                ? `✅ ${getDayFocusLabel(todayPlan)} · all exercises logged`
+                : `📋 ${getDayFocusLabel(todayPlan)} · ${todayPlan.exercises.length} exercises loaded`}
             </Text>
           </View>
         )}
@@ -235,6 +245,28 @@ function createStyles(colors: ColorScheme) {
       fontSize: 22,
       color: colors.background,
       letterSpacing: 2,
+    },
+    doneBanner: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.amber + "44",
+      borderRadius: 8,
+      padding: 20,
+      alignItems: "center",
+    },
+    doneBannerTitle: {
+      fontFamily: fonts.display,
+      fontSize: 24,
+      color: colors.amber,
+      letterSpacing: 2,
+    },
+    doneBannerSub: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      marginTop: 8,
+      textAlign: "center",
+      lineHeight: 18,
     },
     recentWrap: {
       marginTop: 24,
