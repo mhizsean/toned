@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   Alert,
 } from "react-native";
@@ -67,8 +66,7 @@ export default function DaySetupScreen() {
   >(existing?.exercises || []);
 
   const filteredExercises = EXERCISE_CATALOGUE.filter(
-    (ex) =>
-      focuses.includes(ex.category) && libraryExercises.includes(ex.name),
+    (ex) => focuses.includes(ex.category) && libraryExercises.includes(ex.name),
   );
 
   useEffect(() => {
@@ -95,9 +93,7 @@ export default function DaySetupScreen() {
 
   const applyFocusChange = (nextFocuses: ExerciseCategory[]) => {
     setFocuses(nextFocuses);
-    setExercises((prev) =>
-      filterPlannedExercisesByFocuses(prev, nextFocuses),
-    );
+    setExercises((prev) => filterPlannedExercisesByFocuses(prev, nextFocuses));
     if (nextFocuses.length === 0) setShowExPicker(false);
   };
 
@@ -113,7 +109,10 @@ export default function DaySetupScreen() {
 
   const handleSave = () => {
     if (!isRest && focuses.length === 0) {
-      Alert.alert("Missing Focus", "Please select at least one focus for this day.");
+      Alert.alert(
+        "Missing Focus",
+        "Please select at least one focus for this day.",
+      );
       return;
     }
     saveDaySchedule(day, {
@@ -231,7 +230,12 @@ export default function DaySetupScreen() {
                   onPress={() => setShowFocusPicker(!showFocusPicker)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[s.focusBtnText, focuses.length === 0 && s.placeholder]}>
+                  <Text
+                    style={[
+                      s.focusBtnText,
+                      focuses.length === 0 && s.placeholder,
+                    ]}
+                  >
                     {focuses.length === 0
                       ? "Select focus areas..."
                       : "Add or change focus"}
@@ -251,10 +255,7 @@ export default function DaySetupScreen() {
                     return (
                       <TouchableOpacity
                         key={cat}
-                        style={[
-                          s.focusOption,
-                          selected && s.focusOptionActive,
-                        ]}
+                        style={[s.focusOption, selected && s.focusOptionActive]}
                         onPress={() =>
                           applyFocusChange(toggleFocus(focuses, cat))
                         }
