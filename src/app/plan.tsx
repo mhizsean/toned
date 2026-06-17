@@ -58,28 +58,26 @@ export default function PlanScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Text style={styles.wordmark}>TONED</Text>
-          <Text style={styles.sub}>YOUR PLAN</Text>
-        </View>
-        {/* tabs */}
-        <View style={styles.tabs}>
-          {(["schedule", "library"] as const).map((t) => (
-            <TouchableOpacity
-              key={t}
-              onPress={() => setTab(t)}
-              style={[styles.tab, tab === t && styles.tabActive]}
-            >
-              <Text
-                style={[styles.tabLabel, tab === t && styles.tabLabelActive]}
-              >
-                {t === "schedule" ? "SCHEDULE" : "LIBRARY"}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.wordmark}>TONED</Text>
+        <Text style={styles.sub}>YOUR PLAN</Text>
+      </View>
+      {/* tabs */}
+      <View style={styles.tabs}>
+        {(["schedule", "library"] as const).map((t) => (
+          <TouchableOpacity
+            key={t}
+            onPress={() => setTab(t)}
+            style={[styles.tab, tab === t && styles.tabActive]}
+          >
+            <Text style={[styles.tabLabel, tab === t && styles.tabLabelActive]}>
+              {t === "schedule" ? "SCHEDULE" : "LIBRARY"}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        {/* schedule tab */}
+      <ScrollView contentContainerStyle={styles.scroll}>
         {tab === "schedule" && (
           <View>
             {DAYS.map((day) => {
@@ -169,7 +167,6 @@ export default function PlanScreen() {
           </View>
         )}
 
-        {/* library tab */}
         {tab === "library" && (
           <View style={styles.libWrap}>
             {libraryExercises.length === 0 ? (
@@ -214,9 +211,7 @@ export default function PlanScreen() {
                               styles.tagFilterPill,
                               active && styles.tagFilterPillActive,
                             ]}
-                            onPress={() =>
-                              setLibraryTag(active ? null : tag)
-                            }
+                            onPress={() => setLibraryTag(active ? null : tag)}
                           >
                             <Text
                               style={[
@@ -294,11 +289,12 @@ export default function PlanScreen() {
             </TouchableOpacity>
           </View>
         )}
+      </ScrollView>
 
-        <AddExerciseSheet
-          visible={showAddSheet}
-          onClose={() => setShowAddSheet(false)}
-        />
+      <AddExerciseSheet
+        visible={showAddSheet}
+        onClose={() => setShowAddSheet(false)}
+      />
     </SafeAreaView>
   );
 }
