@@ -1,6 +1,6 @@
 # Toned
 
-Toned is a mobile workout app for planning your training week and tracking progress over time. Set up gym, home, or rest days, build an exercise library, log sets and weights during sessions, and review your history and personal records—all in one place.
+Toned is a mobile workout app for planning your training week and tracking progress over time. Set up gym, home, or rest days, build an exercise library, log sets and weights during sessions, and review your history and personal records all in one place.
 
 It started as a personal workout app built around my own routine and has grown into something anyone can use to structure their training and see how they're improving.
 
@@ -12,9 +12,9 @@ It started as a personal workout app built around my own routine and has grown i
 - Quick view of recent sessions
 
 ### Plan
-- **Weekly schedule** — Configure each day of the week (Mon–Sun) as gym, home, or rest
-- **Day setup** — Set a focus area (e.g. glutes & legs, upper body) and assign exercises with target sets and reps
-- **Exercise library** — Curate your own list of exercises from a built-in catalogue of 100+ movements, organised by category
+- **Weekly schedule**: Configure each day of the week (Mon–Sun) as gym, home, or rest
+- **Day setup**: Set a focus area (e.g. glutes & legs, upper body) and assign exercises with target sets and reps
+- **Exercise library**: Curate your own list of exercises from a built-in catalogue of 100+ movements, organised by category
 
 ### Sessions
 - Log exercises and record weight and reps for each set
@@ -24,8 +24,8 @@ It started as a personal workout app built around my own routine and has grown i
 - Finish or discard a session
 
 ### History & records
-- **History** — Browse past sessions with expandable set-by-set breakdowns; delete sessions you no longer need
-- **PRs** — See your heaviest lift per exercise, sorted by weight, with the date each record was set
+- **History**: Browse past sessions with expandable set-by-set breakdowns; delete sessions you no longer need
+- **PRs**: See your heaviest lift per exercise, sorted by weight, with the date each record was set
 
 ### Settings
 - Toggle between dark and light mode
