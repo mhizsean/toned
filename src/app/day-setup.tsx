@@ -14,6 +14,7 @@ import { useTheme } from "../context/ThemeContext";
 import { DayType, PlannedScheduleExercise } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
+import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
 
 const DAY_TYPES: { label: string; value: DayType }[] = [
   { label: "🏋🏽 Gym", value: "gym" },
@@ -54,6 +55,13 @@ export default function DaySetupScreen() {
   const [originalExercises, setOriginalExercises] = useState<
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
+
+  // strip emoji from focus to match catalogue category
+  const focusCategory = focus.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim();
+
+  const filteredExercises = EXERCISE_CATALOGUE.filter(
+    (ex) => ex.category === focusCategory && libraryExercises.includes(ex.name),
+  );
 
   useEffect(() => {
     const e = weeklySchedule[day];
@@ -288,19 +296,22 @@ export default function DaySetupScreen() {
 
               {showExPicker && isEditing && (
                 <View style={s.exPicker}>
-                  {libraryExercises.length === 0 ? (
+                  {filteredExercises.length === 0 ? (
                     <Text style={s.exPickerEmpty}>
-                      No exercises in your library yet. Add some in the Library
-                      tab first.
+                      {libraryExercises.length === 0
+                        ? "No exercises in your library yet. Add some in the Library tab first."
+                        : focus
+                          ? "No library exercises match this focus. Add relevant exercises in the Library tab."
+                          : "Select a focus first to see matching exercises."}
                     </Text>
                   ) : (
-                    libraryExercises.map((ex) => {
-                      const added = exercises.find((e) => e.name === ex);
+                    filteredExercises.map((ex) => {
+                      const added = exercises.find((e) => e.name === ex.name);
                       return (
                         <TouchableOpacity
-                          key={ex}
+                          key={ex.name}
                           style={[s.exPickerItem, added && s.exPickerItemAdded]}
-                          onPress={() => !added && addExercise(ex)}
+                          onPress={() => !added && addExercise(ex.name)}
                         >
                           <Text
                             style={[
@@ -309,7 +320,7 @@ export default function DaySetupScreen() {
                             ]}
                           >
                             {added ? "✓ " : ""}
-                            {ex}
+                            {ex.name}
                           </Text>
                         </TouchableOpacity>
                       );
