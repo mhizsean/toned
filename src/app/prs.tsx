@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { ColorScheme, fonts } from "../constants/theme";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { formatDate } from "../constants/storage";
 import { calculatePRs } from "../utils/prCalculations";
@@ -27,8 +27,7 @@ export default function PRsScreen() {
   }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe}>
         <View style={s.header}>
           <Text style={s.title}>RECORDS</Text>
           <Text style={s.sub}>
@@ -50,8 +49,7 @@ export default function PRsScreen() {
             </View>
           ))}
         </ScrollView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

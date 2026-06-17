@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { ColorScheme, fonts } from "../constants/theme";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { useMemo, useState } from "react";
 import { formatDate } from "../constants/storage";
@@ -45,8 +45,7 @@ export default function HistoryScreen() {
   });
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe}>
         <View style={s.header}>
           <Text style={s.title}>HISTORY</Text>
           <Text style={s.sub}>{sessions.length} SESSIONS LOGGED</Text>
@@ -109,8 +108,7 @@ export default function HistoryScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

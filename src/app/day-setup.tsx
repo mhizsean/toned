@@ -11,7 +11,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { fonts, ColorScheme } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
 import { DayType, PlannedScheduleExercise } from "../types";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
 import {
@@ -142,8 +142,7 @@ export default function DaySetupScreen() {
   };
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe}>
         <View style={s.header}>
           <TouchableOpacity onPress={handleBack}>
             <Text style={s.back}>← BACK</Text>
@@ -364,8 +363,7 @@ export default function DaySetupScreen() {
         </ScrollView>
 
         <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

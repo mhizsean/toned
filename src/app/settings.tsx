@@ -2,15 +2,14 @@ import { View, Text, Switch, StyleSheet, ScrollView } from "react-native";
 import { useMemo } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, ColorScheme } from "../constants/theme";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { TouchableOpacity, Linking } from "react-native";
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe}>
         <View style={s.header}>
           <Text style={s.title}>SETTINGS</Text>
           <Text style={s.sub}>SET PREFERENCE</Text>
@@ -59,8 +58,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

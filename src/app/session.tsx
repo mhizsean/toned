@@ -10,7 +10,7 @@ import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import ExercisePicker from "../components/ExercisePicker";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo } from "react";
@@ -80,8 +80,7 @@ export default function SessionScreen() {
   };
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe}>
         <View style={s.header}>
           <View>
             <Text style={s.title}>SESSION</Text>
@@ -222,8 +221,7 @@ export default function SessionScreen() {
         />
 
         <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

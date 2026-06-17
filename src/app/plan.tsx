@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { useMemo, useState } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { getDayFocusLabel } from "../data/exerciseTypes";
 import { getCatalogueGrouped } from "../utils/exerciseCatalogue";
 import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
@@ -28,8 +28,7 @@ export default function PlanScreen() {
   const libByCategory = getCatalogueGrouped({ names: libraryExercises });
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
           <Text style={styles.wordmark}>TONED</Text>
           <Text style={styles.sub}>YOUR PLAN</Text>
@@ -194,8 +193,7 @@ export default function PlanScreen() {
           visible={showAddSheet}
           onClose={() => setShowAddSheet(false)}
         />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

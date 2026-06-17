@@ -10,6 +10,7 @@ import { fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -115,8 +116,10 @@ function AppLayout() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AppLayout />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AppLayout />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

@@ -9,7 +9,7 @@ import { fonts, ColorScheme } from "../constants/theme";
 import { formatDate, SESSION_DATE_FORMAT } from "../constants/storage";
 import { useWorkoutStore } from "../store/workoutStore";
 import { calculatePRs } from "../utils/prCalculations";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo, useState } from "react";
@@ -63,100 +63,98 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={s.safe}>
-        <ScrollView contentContainerStyle={s.scroll}>
-          <View style={s.header}>
-            <Text style={s.wordmark}>TONED</Text>
-            <Text style={s.date}>{formatDate()}</Text>
-          </View>
+    <SafeAreaView style={s.safe}>
+      <ScrollView contentContainerStyle={s.scroll}>
+        <View style={s.header}>
+          <Text style={s.wordmark}>TONED</Text>
+          <Text style={s.date}>{formatDate()}</Text>
+        </View>
 
-          <View style={s.statsRow}>
-            <View style={s.statBox}>
-              <Text style={s.statNum}>{sessions.length}</Text>
-              <Text style={s.statLabel}>SESSIONS</Text>
-            </View>
-            <View style={s.statBox}>
-              <Text style={s.statNum}>{weekCount}</Text>
-              <Text style={s.statLabel}>THIS WEEK</Text>
-            </View>
-            <View style={s.statBox}>
-              <Text style={s.statNum}>{totalPRs}</Text>
-              <Text style={s.statLabel}>PRs</Text>
-            </View>
+        <View style={s.statsRow}>
+          <View style={s.statBox}>
+            <Text style={s.statNum}>{sessions.length}</Text>
+            <Text style={s.statLabel}>SESSIONS</Text>
           </View>
+          <View style={s.statBox}>
+            <Text style={s.statNum}>{weekCount}</Text>
+            <Text style={s.statLabel}>THIS WEEK</Text>
+          </View>
+          <View style={s.statBox}>
+            <Text style={s.statNum}>{totalPRs}</Text>
+            <Text style={s.statLabel}>PRs</Text>
+          </View>
+        </View>
 
-          {activeSession ? (
-            <View style={s.activeBanner}>
-              <View>
-                <Text style={s.activeBannerTitle}>SESSION IN PROGRESS</Text>
-                <Text style={s.activeBannerSub}>
-                  {`${pluralize(activeSession.exercises.length, "exercise")} logged`}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={s.resumeBtn}
-                onPress={() => router.push("/session")}
-              >
-                <Text style={s.resumeBtnText}>RESUME →</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity style={s.startBtn} onPress={handleStartSession}>
-              <Text style={s.startBtnText}>＋ START WORKOUT</Text>
-            </TouchableOpacity>
-          )}
-          {todayPlan && todayPlan.type !== "rest" && (
-            <View style={s.todayPlanBanner}>
-              <Text style={s.todayPlanText}>
-                📋 {getDayFocusLabel(todayPlan)} · {todayPlan.exercises.length}{" "}
-                exercises loaded
+        {activeSession ? (
+          <View style={s.activeBanner}>
+            <View>
+              <Text style={s.activeBannerTitle}>SESSION IN PROGRESS</Text>
+              <Text style={s.activeBannerSub}>
+                {`${pluralize(activeSession.exercises.length, "exercise")} logged`}
               </Text>
             </View>
-          )}
+            <TouchableOpacity
+              style={s.resumeBtn}
+              onPress={() => router.push("/session")}
+            >
+              <Text style={s.resumeBtnText}>RESUME →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={s.startBtn} onPress={handleStartSession}>
+            <Text style={s.startBtnText}>＋ START WORKOUT</Text>
+          </TouchableOpacity>
+        )}
+        {todayPlan && todayPlan.type !== "rest" && (
+          <View style={s.todayPlanBanner}>
+            <Text style={s.todayPlanText}>
+              📋 {getDayFocusLabel(todayPlan)} · {todayPlan.exercises.length}{" "}
+              exercises loaded
+            </Text>
+          </View>
+        )}
 
-          {todayPlan?.type === "rest" && (
-            <View style={s.todayPlanBanner}>
-              <Text style={s.todayPlanText}>😴 Rest day — take it easy</Text>
-            </View>
-          )}
+        {todayPlan?.type === "rest" && (
+          <View style={s.todayPlanBanner}>
+            <Text style={s.todayPlanText}>😴 Rest day — take it easy</Text>
+          </View>
+        )}
 
-          {sessions.length > 0 && (
-            <View style={s.recentWrap}>
-              <Text style={s.sectionLabel}>RECENT SESSIONS</Text>
+        {sessions.length > 0 && (
+          <View style={s.recentWrap}>
+            <Text style={s.sectionLabel}>RECENT SESSIONS</Text>
 
-              {sessions.slice(0, 3).map((session) => (
-                <View style={s.sessionCard} key={session.id}>
-                  <View style={s.sessionCardTop}>
-                    <Text style={s.sessionDate}>
-                      {formatDate(session.date, SESSION_DATE_FORMAT)}
-                    </Text>
+            {sessions.slice(0, 3).map((session) => (
+              <View style={s.sessionCard} key={session.id}>
+                <View style={s.sessionCardTop}>
+                  <Text style={s.sessionDate}>
+                    {formatDate(session.date, SESSION_DATE_FORMAT)}
+                  </Text>
 
-                    <Text style={s.sessionVol}>
-                      {pluralize(session.exercises.length, "exercise")}
-                    </Text>
-                  </View>
-                  <ExerciseTagRow>
-                    {session.exercises.map((exercise, i) => (
-                      <ExerciseTag key={i} name={exercise.name} />
-                    ))}
-                  </ExerciseTagRow>
+                  <Text style={s.sessionVol}>
+                    {pluralize(session.exercises.length, "exercise")}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+                <ExerciseTagRow>
+                  {session.exercises.map((exercise, i) => (
+                    <ExerciseTag key={i} name={exercise.name} />
+                  ))}
+                </ExerciseTagRow>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
-        <TodayPlanSheet
-          visible={showTodayPrompt}
-          focus={todayPlan ? getDayFocusLabel(todayPlan) : undefined}
-          exercises={todayPlan?.exercises ?? []}
-          onClose={() => setShowTodayPrompt(false)}
-          onStartWithPlan={handleStartWithPlan}
-          onStartBlank={handleStartBlank}
-        />
-      </SafeAreaView>
-    </SafeAreaProvider>
+      <TodayPlanSheet
+        visible={showTodayPrompt}
+        focus={todayPlan ? getDayFocusLabel(todayPlan) : undefined}
+        exercises={todayPlan?.exercises ?? []}
+        onClose={() => setShowTodayPrompt(false)}
+        onStartWithPlan={handleStartWithPlan}
+        onStartBlank={handleStartBlank}
+      />
+    </SafeAreaView>
   );
 }
 
