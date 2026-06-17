@@ -62,6 +62,13 @@ export default function HomeScreen() {
     router.push("/session");
   };
 
+  const openSessionHistory = (sessionId: string) => {
+    router.navigate({
+      pathname: "/history",
+      params: { expand: sessionId },
+    });
+  };
+
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.scroll}>
@@ -125,14 +132,19 @@ export default function HomeScreen() {
             <Text style={s.sectionLabel}>RECENT SESSIONS</Text>
 
             {sessions.slice(0, 3).map((session) => (
-              <View style={s.sessionCard} key={session.id}>
+              <TouchableOpacity
+                key={session.id}
+                style={s.sessionCard}
+                onPress={() => openSessionHistory(session.id)}
+                activeOpacity={0.8}
+              >
                 <View style={s.sessionCardTop}>
                   <Text style={s.sessionDate}>
                     {formatDate(session.date, SESSION_DATE_FORMAT)}
                   </Text>
 
                   <Text style={s.sessionVol}>
-                    {pluralize(session.exercises.length, "exercise")}
+                    {pluralize(session.exercises.length, "exercise")} →
                   </Text>
                 </View>
                 <ExerciseTagRow>
@@ -140,7 +152,7 @@ export default function HomeScreen() {
                     <ExerciseTag key={exercise.name} name={exercise.name} />
                   ))}
                 </ExerciseTagRow>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}

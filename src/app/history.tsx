@@ -8,9 +8,10 @@ import {
 import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDate } from "../constants/storage";
 import { useTheme } from "../context/ThemeContext";
+import { useLocalSearchParams } from "expo-router";
 import DeleteIconButton from "../components/DeleteIconButton";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
 import { formatSet } from "../utils/formatWorkout";
@@ -18,9 +19,14 @@ import { findExercise } from "../utils/exerciseCatalogue";
 
 export default function HistoryScreen() {
   const { sessions, deleteSession } = useWorkoutStore();
+  const { expand } = useLocalSearchParams<{ expand?: string }>();
   const [expanded, setExpanded] = useState<string | null>(null);
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
+
+  useEffect(() => {
+    if (expand) setExpanded(expand);
+  }, [expand]);
 
   if (sessions.length === 0) {
     return (
