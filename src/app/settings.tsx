@@ -1,5 +1,6 @@
 import { View, Text, Switch, StyleSheet, ScrollView } from "react-native";
 import { useMemo } from "react";
+import Constants from "expo-constants";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, ColorScheme } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { TouchableOpacity, Linking } from "react-native";
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
+  const appVersion = Constants.expoConfig?.version ?? "—";
 
   return (
     <SafeAreaView style={s.safe}>
@@ -43,7 +45,7 @@ export default function SettingsScreen() {
             <View style={s.divider} />
             <View style={s.infoRow}>
               <Text style={s.infoLabel}>Version</Text>
-              <Text style={s.infoValue}>1.0.0</Text>
+              <Text style={s.infoValue}>{appVersion}</Text>
             </View>
             <View style={s.divider} />
 
