@@ -7,16 +7,19 @@ It started as a personal workout app built around my own routine and has grown i
 ## Features
 
 ### Home
+
 - Dashboard with total sessions, workouts this week, and PR count
 - Start a new workout or resume an in-progress session
 - Quick view of recent sessions
 
 ### Plan
+
 - **Weekly schedule**: Configure each day of the week (Mon–Sun) as gym, home, or rest
 - **Day setup**: Set a focus area (e.g. glutes & legs, upper body) and assign exercises with target sets and reps
 - **Exercise library**: Curate your own list of exercises from a built-in catalogue of 100+ movements, organised by category
 
 ### Sessions
+
 - Log exercises and record weight and reps for each set
 - Add or remove sets during a workout
 - Pick exercises from your personal library
@@ -24,21 +27,24 @@ It started as a personal workout app built around my own routine and has grown i
 - Finish or discard a session
 
 ### History & records
+
 - **History**: Browse past sessions with expandable set-by-set breakdowns; delete sessions you no longer need
 - **PRs**: See your heaviest lift per exercise, sorted by weight, with the date each record was set
 
 ### Settings
+
 - Toggle between dark and light mode
 - App version and credits
 
 ### Data & offline
+
 - All data is stored locally on your device (sessions, schedule, library, and theme preference)
 - No account or internet connection required to use the app
 
 ## Screens
 
 | Tab | Route | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | Home | `/` | Dashboard and workout start |
 | Plan | `/plan` | Weekly schedule and exercise library |
 | History | `/history` | Past session log |
@@ -50,7 +56,7 @@ Hidden routes (no tab): `/session` (active workout), `/day-setup` (configure a d
 ## Tech stack
 
 | Library | Purpose |
-|---|---|
+| --- | --- |
 | [Expo](https://expo.dev/) (~54) | React Native framework and dev tooling |
 | [expo-router](https://docs.expo.dev/router/introduction/) | File-based navigation (tabs + stack) |
 | [zustand](https://github.com/pmndrs/zustand) | Workout state (sessions, schedule, library) |
@@ -131,7 +137,7 @@ Toned/
 ## Local storage keys
 
 | Key | Data |
-|---|---|
+| --- | --- |
 | `toned_sessions` | Completed workout sessions |
 | `toned_schedule` | Weekly day-by-day plan |
 | `toned_library` | User's exercise library |
