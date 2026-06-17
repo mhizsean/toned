@@ -13,16 +13,36 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo } from "react";
+import { DAYS, TODAY } from "../constants/planning";
 
 export default function HomeScreen() {
-  const { sessions, activeSession, startSession } = useWorkoutStore();
+  const { sessions, activeSession, startSession, weeklySchedule } =
+    useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const weekCount = sessions.filter(
     (session) => new Date(session.date) > new Date(Date.now() - 7 * 86_400_000),
   ).length;
 
+  const todayPlan = weeklySchedule[TODAY];
   const totalPRs = Object.keys(calculatePRs(sessions)).length;
+
+  const handleStartSession = () => {
+    if (
+      todayPlan &&
+      todayPlan.type !== "rest" &&
+      todayPlan.exercises.length > 0
+    ) {
+      const exercises = todayPlan.exercises.map((ex) => ({
+        name: ex.name,
+        sets: [] as { weight: number; reps: number }[],
+      }));
+      startSession(exercises);
+    } else {
+      startSession();
+    }
+    router.push("/session");
+  };
 
   return (
     <SafeAreaProvider>
@@ -65,15 +85,23 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity
-              style={s.startBtn}
-              onPress={() => {
-                startSession();
-                router.push("/session");
-              }}
-            >
+            <TouchableOpacity style={s.startBtn} onPress={handleStartSession}>
               <Text style={s.startBtnText}>＋ START WORKOUT</Text>
             </TouchableOpacity>
+          )}
+          {todayPlan && todayPlan.type !== "rest" && (
+            <View style={s.todayPlanBanner}>
+              <Text style={s.todayPlanText}>
+                📋 {todayPlan.focus} · {todayPlan.exercises.length} exercises
+                loaded
+              </Text>
+            </View>
+          )}
+
+          {todayPlan?.type === "rest" && (
+            <View style={s.todayPlanBanner}>
+              <Text style={s.todayPlanText}>😴 Rest day — take it easy</Text>
+            </View>
           )}
 
           {sessions.length > 0 && (
@@ -86,21 +114,6 @@ export default function HomeScreen() {
                     <Text style={s.sessionDate}>
                       {formatDate(session.date, SESSION_DATE_FORMAT)}
                     </Text>
-
-                    {/* <Text style={s.sessionVol}>
-                      {Math.round(
-                        session.exercises.reduce(
-                          (acc, exercise) =>
-                            acc +
-                            exercise.sets.reduce(
-                              (acc, set) => acc + set.weight * set.reps,
-                              0,
-                            ),
-                          0,
-                        ),
-                      )}
-                      kg Vol
-                    </Text> */}
 
                     <Text style={s.sessionVol}>
                       {session.exercises.length} exercise
@@ -274,6 +287,20 @@ function createStyles(colors: ColorScheme) {
       fontSize: 16,
       color: colors.background,
       letterSpacing: 1,
+    },
+    todayPlanBanner: {
+      marginTop: 8,
+      padding: 10,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+    todayPlanText: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.muted,
     },
   });
 }

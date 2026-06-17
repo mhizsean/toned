@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DaySchedule, Session, WeeklySchedule, WorkoutSet } from '../types';
+import { DaySchedule, Exercise, Session, WeeklySchedule, WorkoutSet } from '../types';
 
 type WorkoutStore = {
   sessions: Session[];
   activeSession: Session | null;
-  startSession: () => void;
+  startSession: (exercises?: Exercise[]) => void;
   addExercise: (name: string) => void;
   addSet: (exIndex: number, set: WorkoutSet) => void;
   removeSet: (exIndex: number, setIndex: number) => void;
@@ -37,14 +37,14 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     }
   },
 
-  startSession: () => {
-    const session: Session = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      exercises: [],
-    };
-    set({ activeSession: session });
-  },
+startSession: (exercises: Exercise[] = []) => {
+  const session: Session = {
+    id: Date.now().toString(),
+    date: new Date().toISOString(),
+    exercises: exercises.map(ex => ({ name: ex.name, sets: [] })),
+  };
+  set({ activeSession: session });
+},
 
   addExercise: (name) => {
     const { activeSession } = get();
