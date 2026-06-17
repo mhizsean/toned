@@ -3,7 +3,7 @@ import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { formatDate } from "../constants/storage";
-import { calculatePRs } from "../utils/prCalculations";
+import { calculatePRs, comparePRs, formatPRPrimary, formatPRSecondary } from "../utils/prCalculations";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo } from "react";
 
@@ -11,8 +11,8 @@ export default function PRsScreen() {
   const { sessions } = useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const entries = Object.entries(calculatePRs(sessions)).sort(
-    (a, b) => b[1].weight - a[1].weight,
+  const entries = Object.entries(calculatePRs(sessions)).sort(([nameA, prA], [nameB, prB]) =>
+    comparePRs(nameA, prA, prB) || nameA.localeCompare(nameB),
   );
 
   if (entries.length === 0) {
@@ -36,18 +36,23 @@ export default function PRsScreen() {
         </View>
 
         <ScrollView contentContainerStyle={s.scroll}>
-          {entries.map(([name, pr]) => (
+          {entries.map(([name, pr]) => {
+            const secondary = formatPRSecondary(name, pr);
+            return (
             <View key={name} style={s.card}>
               <View style={s.cardLeft}>
                 <Text style={s.exName}>{name}</Text>
                 <Text style={s.prDate}>{formatDate(pr.date)}</Text>
               </View>
               <View style={s.cardRight}>
-                <Text style={s.prWeight}>{pr.weight}kg</Text>
-                <Text style={s.prReps}>{pr.reps} reps</Text>
+                <Text style={s.prWeight}>{formatPRPrimary(name, pr)}</Text>
+                {secondary ? (
+                  <Text style={s.prReps}>{secondary}</Text>
+                ) : null}
               </View>
             </View>
-          ))}
+            );
+          })}
         </ScrollView>
     </SafeAreaView>
   );

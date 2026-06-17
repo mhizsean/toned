@@ -38,7 +38,7 @@ export default function DaySetupScreen() {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const { day } = useLocalSearchParams<{ day: string }>();
-  const { libraryExercises, weeklySchedule, saveDaySchedule } =
+  const { libraryExercises, weeklySchedule, saveDaySchedule, scheduleLoaded } =
     useWorkoutStore();
   const { exerciseName, openInfo, closeInfo } = useExerciseInfoSheet();
 
@@ -80,7 +80,7 @@ export default function DaySetupScreen() {
     setOriginalExercises(e?.exercises || []);
     setShowFocusPicker(false);
     setShowExPicker(false);
-  }, [day]);
+  }, [day, weeklySchedule]);
 
   const hasChanges =
     type !== originalType ||
@@ -108,6 +108,7 @@ export default function DaySetupScreen() {
   };
 
   const handleSave = () => {
+    if (!scheduleLoaded) return;
     if (!isRest && focuses.length === 0) {
       Alert.alert(
         "Missing Focus",
@@ -140,6 +141,16 @@ export default function DaySetupScreen() {
       router.navigate("/plan");
     }
   };
+
+  if (!scheduleLoaded) {
+    return (
+      <SafeAreaView style={s.safe}>
+        <View style={s.loading}>
+          <Text style={s.loadingText}>LOADING…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe}>
@@ -372,6 +383,17 @@ function createStyles(colors: ColorScheme) {
     safe: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    loading: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    loadingText: {
+      fontFamily: fonts.mono,
+      fontSize: 11,
+      color: colors.muted,
+      letterSpacing: 2,
     },
     header: {
       flexDirection: "row",
