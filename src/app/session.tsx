@@ -26,6 +26,7 @@ import {
   getRepInputPlaceholder,
   isTimedExercise,
 } from "../utils/exerciseCatalogue";
+import { confirmDestructive } from "../utils/alerts";
 
 export default function SessionScreen() {
   const {
@@ -88,152 +89,161 @@ export default function SessionScreen() {
   };
 
   const handleDiscard = () => {
-    discardSession();
-    router.replace("/");
+    confirmDestructive({
+      title: "Discard Session",
+      message:
+        "Are you sure you want to discard your session? This cannot be undone.",
+      confirmLabel: "Discard",
+      cancelLabel: "Cancel",
+      onConfirm: () => {
+        discardSession();
+        router.replace("/");
+      },
+    });
   };
 
   return (
     <SafeAreaView style={s.safe}>
-        <View style={s.header}>
-          <View>
-            <Text style={s.title}>SESSION</Text>
-            <Text style={s.sub}>
-              {pluralize(activeSession.exercises.length, "exercise")} logged
-            </Text>
-          </View>
-          <TouchableOpacity onPress={handleDiscard}>
-            <Text style={s.discard}>DISCARD</Text>
-          </TouchableOpacity>
+      <View style={s.header}>
+        <View>
+          <Text style={s.title}>SESSION</Text>
+          <Text style={s.sub}>
+            {pluralize(activeSession.exercises.length, "exercise")} logged
+          </Text>
         </View>
+        <TouchableOpacity onPress={handleDiscard}>
+          <Text style={s.discard}>DISCARD</Text>
+        </TouchableOpacity>
+      </View>
 
-        <ScrollView contentContainerStyle={s.scroll}>
-          {activeSession.exercises.map((ex, exIdx) => {
-            const isOpen = expandedEx === exIdx;
-            const inp = inputs[exIdx] || { w: "", r: "" };
-            const exerciseInfo = findExercise(ex.name);
-            const timed = isTimedExercise(exerciseInfo);
-            const repLabel = exerciseInfo?.repLabel;
-            const sessionMax = timed
-              ? ex.sets.length
-                ? Math.max(...ex.sets.map((set) => set.reps))
-                : null
-              : getTopWeight(ex.sets);
+      <ScrollView contentContainerStyle={s.scroll}>
+        {activeSession.exercises.map((ex, exIdx) => {
+          const isOpen = expandedEx === exIdx;
+          const inp = inputs[exIdx] || { w: "", r: "" };
+          const exerciseInfo = findExercise(ex.name);
+          const timed = isTimedExercise(exerciseInfo);
+          const repLabel = exerciseInfo?.repLabel;
+          const sessionMax = timed
+            ? ex.sets.length
+              ? Math.max(...ex.sets.map((set) => set.reps))
+              : null
+            : getTopWeight(ex.sets);
 
-            return (
-              <View
-                key={`${ex.name}-${exIdx}`}
-                style={[s.exCard, isOpen && s.exCardOpen]}
-              >
-                <View style={s.exCardHeader}>
+          return (
+            <View
+              key={`${ex.name}-${exIdx}`}
+              style={[s.exCard, isOpen && s.exCardOpen]}
+            >
+              <View style={s.exCardHeader}>
+                <TouchableOpacity
+                  style={s.exCardHeaderLeft}
+                  onPress={() => setExpandedEx(isOpen ? null : exIdx)}
+                >
+                  <Text style={s.exName}>{ex.name}</Text>
+                  <Text style={s.exMeta}>
+                    {ex.sets.length > 0
+                      ? timed
+                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax}s`
+                        : `${pluralize(ex.sets.length, "set")} · top ${sessionMax}kg`
+                      : "No sets yet"}
+                  </Text>
+                </TouchableOpacity>
+                <View style={s.exCardHeaderRight}>
+                  <ExerciseInfoButton onPress={() => openInfo(ex.name)} />
                   <TouchableOpacity
-                    style={s.exCardHeaderLeft}
                     onPress={() => setExpandedEx(isOpen ? null : exIdx)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Text style={s.exName}>{ex.name}</Text>
-                    <Text style={s.exMeta}>
-                      {ex.sets.length > 0
-                        ? timed
-                          ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax}s`
-                          : `${pluralize(ex.sets.length, "set")} · top ${sessionMax}kg`
-                        : "No sets yet"}
-                    </Text>
+                    <Text style={s.chevron}>{isOpen ? "▲" : "▼"}</Text>
                   </TouchableOpacity>
-                  <View style={s.exCardHeaderRight}>
-                    <ExerciseInfoButton onPress={() => openInfo(ex.name)} />
+                </View>
+              </View>
+
+              {isOpen && (
+                <View style={s.exCardBody}>
+                  {ex.sets.map((set, sIdx) => (
+                    <View key={`${ex.name}-set-${sIdx}`} style={s.setRow}>
+                      <Text style={s.setInfo}>
+                        <Text style={s.setNum}>#{sIdx + 1} </Text>
+                        {formatSet(set.weight, set.reps, repLabel)}
+                      </Text>
+                      <RemoveButton
+                        size={16}
+                        onPress={() => removeSet(exIdx, sIdx)}
+                      />
+                    </View>
+                  ))}
+
+                  <View style={s.inputRow}>
+                    {!timed && (
+                      <>
+                        <TextInput
+                          style={s.input}
+                          placeholder="kg"
+                          placeholderTextColor={colors.muted}
+                          keyboardType="numeric"
+                          value={inp.w}
+                          onChangeText={(v) =>
+                            setInputs((p) => ({
+                              ...p,
+                              [exIdx]: { ...p[exIdx], w: v },
+                            }))
+                          }
+                        />
+                        <Text style={s.multiply}>×</Text>
+                      </>
+                    )}
+                    <TextInput
+                      style={[s.input, timed && s.inputWide]}
+                      placeholder={getRepInputPlaceholder(repLabel)}
+                      placeholderTextColor={colors.muted}
+                      keyboardType="numeric"
+                      value={inp.r}
+                      onChangeText={(v) =>
+                        setInputs((p) => ({
+                          ...p,
+                          [exIdx]: { ...p[exIdx], r: v },
+                        }))
+                      }
+                    />
                     <TouchableOpacity
-                      onPress={() => setExpandedEx(isOpen ? null : exIdx)}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={s.addSetBtn}
+                      onPress={() => handleAddSet(exIdx)}
                     >
-                      <Text style={s.chevron}>{isOpen ? "▲" : "▼"}</Text>
+                      <Text style={s.addSetBtnText}>+ SET</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
+              )}
+            </View>
+          );
+        })}
 
-                {isOpen && (
-                  <View style={s.exCardBody}>
-                    {ex.sets.map((set, sIdx) => (
-                      <View key={`${ex.name}-set-${sIdx}`} style={s.setRow}>
-                        <Text style={s.setInfo}>
-                          <Text style={s.setNum}>#{sIdx + 1} </Text>
-                          {formatSet(set.weight, set.reps, repLabel)}
-                        </Text>
-                        <RemoveButton
-                          size={16}
-                          onPress={() => removeSet(exIdx, sIdx)}
-                        />
-                      </View>
-                    ))}
+        <TouchableOpacity
+          style={s.addExBtn}
+          onPress={() => setShowPicker(true)}
+        >
+          <Text style={s.addExBtnText}>+ ADD EXERCISE</Text>
+        </TouchableOpacity>
 
-                    <View style={s.inputRow}>
-                      {!timed && (
-                        <>
-                          <TextInput
-                            style={s.input}
-                            placeholder="kg"
-                            placeholderTextColor={colors.muted}
-                            keyboardType="numeric"
-                            value={inp.w}
-                            onChangeText={(v) =>
-                              setInputs((p) => ({
-                                ...p,
-                                [exIdx]: { ...p[exIdx], w: v },
-                              }))
-                            }
-                          />
-                          <Text style={s.multiply}>×</Text>
-                        </>
-                      )}
-                      <TextInput
-                        style={[s.input, timed && s.inputWide]}
-                        placeholder={getRepInputPlaceholder(repLabel)}
-                        placeholderTextColor={colors.muted}
-                        keyboardType="numeric"
-                        value={inp.r}
-                        onChangeText={(v) =>
-                          setInputs((p) => ({
-                            ...p,
-                            [exIdx]: { ...p[exIdx], r: v },
-                          }))
-                        }
-                      />
-                      <TouchableOpacity
-                        style={s.addSetBtn}
-                        onPress={() => handleAddSet(exIdx)}
-                      >
-                        <Text style={s.addSetBtnText}>+ SET</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-              </View>
-            );
-          })}
-
-          <TouchableOpacity
-            style={s.addExBtn}
-            onPress={() => setShowPicker(true)}
-          >
-            <Text style={s.addExBtnText}>+ ADD EXERCISE</Text>
+        {activeSession.exercises.length > 0 && (
+          <TouchableOpacity style={s.finishBtn} onPress={handleFinish}>
+            <Text style={s.finishBtnText}>FINISH SESSION ✓</Text>
           </TouchableOpacity>
+        )}
+      </ScrollView>
+      <ExercisePicker
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelect={(name) => {
+          addExercise(name);
+          setExpandedEx(activeSession.exercises.length);
+        }}
+        addedExercises={activeSession.exercises.map((ex) => ex.name)}
+        exercisePool={libraryExercises}
+      />
 
-          {activeSession.exercises.length > 0 && (
-            <TouchableOpacity style={s.finishBtn} onPress={handleFinish}>
-              <Text style={s.finishBtnText}>FINISH SESSION ✓</Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
-        <ExercisePicker
-          visible={showPicker}
-          onClose={() => setShowPicker(false)}
-          onSelect={(name) => {
-            addExercise(name);
-            setExpandedEx(activeSession.exercises.length);
-          }}
-          addedExercises={activeSession.exercises.map((ex) => ex.name)}
-          exercisePool={libraryExercises}
-        />
-
-        <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
+      <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
     </SafeAreaView>
   );
 }
