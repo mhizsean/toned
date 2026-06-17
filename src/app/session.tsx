@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
@@ -70,8 +71,20 @@ export default function SessionScreen() {
   };
 
   const handleFinish = () => {
-    finishSession();
-    router.replace("/");
+    Alert.alert(
+      "Finish Session",
+      "Are you sure you want to finish your session?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Finish",
+          onPress: () => {
+            finishSession();
+            router.replace("/");
+          },
+        },
+      ],
+    );
   };
 
   const handleDiscard = () => {
