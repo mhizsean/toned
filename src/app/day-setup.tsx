@@ -7,9 +7,10 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { colors, fonts } from "../constants/theme";
+import { fonts, ColorScheme } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
 import { DayType, PlannedScheduleExercise } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
@@ -29,13 +30,14 @@ const FOCUS_OPTIONS = [
 ];
 
 export default function DaySetupScreen() {
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
   const { day } = useLocalSearchParams<{ day: string }>();
   const { libraryExercises, weeklySchedule, saveDaySchedule } =
     useWorkoutStore();
 
   const existing = weeklySchedule[day];
 
-  // view vs edit mode — new day starts in edit, existing day starts in view
   const [isEditing, setIsEditing] = useState(!existing);
   const [type, setType] = useState<DayType>(existing?.type || "gym");
   const [focus, setFocus] = useState(existing?.focus || "");
@@ -45,7 +47,6 @@ export default function DaySetupScreen() {
   );
   const [showExPicker, setShowExPicker] = useState(false);
 
-  // track originals to detect changes
   const [originalType, setOriginalType] = useState<DayType>(
     existing?.type || "gym",
   );
@@ -54,7 +55,6 @@ export default function DaySetupScreen() {
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
 
-  // fix issue 4 — reset all state when day param changes
   useEffect(() => {
     const e = weeklySchedule[day];
     setIsEditing(!e);
@@ -68,7 +68,6 @@ export default function DaySetupScreen() {
     setShowExPicker(false);
   }, [day]);
 
-  // fix issue 1 — only enable save when something changed
   const hasChanges =
     type !== originalType ||
     focus !== originalFocus ||
@@ -110,16 +109,13 @@ export default function DaySetupScreen() {
       focus: isRest ? "Rest Day" : focus,
       exercises: isRest ? [] : exercises,
     });
-    // update originals so hasChanges resets
     setOriginalType(type);
     setOriginalFocus(focus);
     setOriginalExercises(exercises);
     setIsEditing(false);
-    // fix issue 3 — go back to plan screen not home
     router.navigate("/plan");
   };
 
-  // fix issue 3 — back also goes to plan screen
   const handleBack = () => {
     if (isEditing && hasChanges) {
       Alert.alert(
@@ -142,14 +138,12 @@ export default function DaySetupScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={s.safe}>
-        {/* Header */}
         <View style={s.header}>
           <TouchableOpacity onPress={handleBack}>
             <Text style={s.back}>← BACK</Text>
           </TouchableOpacity>
           <Text style={s.title}>{day.toUpperCase()}</Text>
 
-          {/* fix issue 2 — show EDIT or SAVE depending on mode */}
           {isEditing ? (
             <TouchableOpacity
               onPress={handleSave}
@@ -341,265 +335,267 @@ export default function DaySetupScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    paddingBottom: 8,
-  },
-  back: {
-    fontFamily: fonts.display,
-    fontSize: 14,
-    color: colors.muted,
-    letterSpacing: 1,
-  },
-  title: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.text,
-    letterSpacing: 2,
-  },
-  save: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.amber,
-    letterSpacing: 1,
-  },
-  saveDisabled: {
-    color: colors.muted,
-    opacity: 0.4,
-  },
-  edit: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.amber,
-    letterSpacing: 1,
-  },
-  scroll: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  sectionLabel: {
-    fontFamily: fonts.body,
-    fontSize: 10,
-    color: colors.muted,
-    letterSpacing: 2,
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  typeRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  typeBtn: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-  },
-  typeBtnActive: {
-    backgroundColor: colors.amber + "22",
-    borderColor: colors.amber + "66",
-  },
-  typeBtnText: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.muted,
-  },
-  typeBtnTextActive: {
-    color: colors.amber,
-  },
-  focusBtn: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  focusBtnText: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.text,
-  },
-  placeholder: {
-    color: colors.muted,
-  },
-  chevron: {
-    color: colors.muted,
-    fontSize: 10,
-  },
-  focusDropdown: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    marginTop: 4,
-    overflow: "hidden",
-  },
-  focusOption: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  focusOptionActive: {
-    backgroundColor: colors.amber + "22",
-  },
-  focusOptionText: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.muted,
-  },
-  focusOptionTextActive: {
-    color: colors.amber,
-  },
-  exEmpty: {
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-  },
-  exEmptyText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.muted,
-  },
-  exCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 8,
-  },
-  exCardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  exName: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 14,
-    color: colors.text,
-    flex: 1,
-  },
-  exRemove: {
-    color: colors.muted,
-    fontSize: 14,
-  },
-  exInputRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  exInputWrap: {
-    flex: 1,
-  },
-  exInputLabel: {
-    fontFamily: fonts.body,
-    fontSize: 9,
-    color: colors.muted,
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  exInput: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    padding: 10,
-    fontFamily: fonts.mono,
-    fontSize: 14,
-    color: colors.text,
-    textAlign: "center",
-  },
-  exInputDisabled: {
-    opacity: 0.5,
-  },
-  addExBtn: {
-    borderWidth: 1,
-    borderColor: colors.amber + "66",
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  addExBtnText: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.amber,
-    letterSpacing: 1,
-  },
-  exPicker: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    marginTop: 8,
-    overflow: "hidden",
-  },
-  exPickerEmpty: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.muted,
-    padding: 16,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  exPickerItem: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  exPickerItemAdded: {
-    backgroundColor: colors.amber + "11",
-  },
-  exPickerItemText: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.text,
-  },
-  exPickerItemTextAdded: {
-    color: colors.amber,
-  },
-  restCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 30,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  restEmoji: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  restTitle: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.muted,
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  restSub: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.muted,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-});
+function createStyles(colors: ColorScheme) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 20,
+      paddingBottom: 8,
+    },
+    back: {
+      fontFamily: fonts.display,
+      fontSize: 14,
+      color: colors.muted,
+      letterSpacing: 1,
+    },
+    title: {
+      fontFamily: fonts.display,
+      fontSize: 24,
+      color: colors.text,
+      letterSpacing: 2,
+    },
+    save: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.amber,
+      letterSpacing: 1,
+    },
+    saveDisabled: {
+      color: colors.muted,
+      opacity: 0.4,
+    },
+    edit: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.amber,
+      letterSpacing: 1,
+    },
+    scroll: {
+      padding: 20,
+      paddingTop: 10,
+    },
+    sectionLabel: {
+      fontFamily: fonts.body,
+      fontSize: 10,
+      color: colors.muted,
+      letterSpacing: 2,
+      marginBottom: 8,
+      marginTop: 20,
+    },
+    typeRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    typeBtn: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 10,
+      alignItems: "center",
+    },
+    typeBtnActive: {
+      backgroundColor: colors.amber + "22",
+      borderColor: colors.amber + "66",
+    },
+    typeBtnText: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.muted,
+    },
+    typeBtnTextActive: {
+      color: colors.amber,
+    },
+    focusBtn: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 14,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    focusBtnText: {
+      fontFamily: fonts.body,
+      fontSize: 14,
+      color: colors.text,
+    },
+    placeholder: {
+      color: colors.muted,
+    },
+    chevron: {
+      color: colors.muted,
+      fontSize: 10,
+    },
+    focusDropdown: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      marginTop: 4,
+      overflow: "hidden",
+    },
+    focusOption: {
+      padding: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    focusOptionActive: {
+      backgroundColor: colors.amber + "22",
+    },
+    focusOptionText: {
+      fontFamily: fonts.body,
+      fontSize: 14,
+      color: colors.muted,
+    },
+    focusOptionTextActive: {
+      color: colors.amber,
+    },
+    exEmpty: {
+      padding: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+    },
+    exEmptyText: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+    },
+    exCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 14,
+      marginBottom: 8,
+    },
+    exCardTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    exName: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 14,
+      color: colors.text,
+      flex: 1,
+    },
+    exRemove: {
+      color: colors.muted,
+      fontSize: 14,
+    },
+    exInputRow: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    exInputWrap: {
+      flex: 1,
+    },
+    exInputLabel: {
+      fontFamily: fonts.body,
+      fontSize: 9,
+      color: colors.muted,
+      letterSpacing: 1,
+      marginBottom: 6,
+    },
+    exInput: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 6,
+      padding: 10,
+      fontFamily: fonts.mono,
+      fontSize: 14,
+      color: colors.text,
+      textAlign: "center",
+    },
+    exInputDisabled: {
+      opacity: 0.5,
+    },
+    addExBtn: {
+      borderWidth: 1,
+      borderColor: colors.amber + "66",
+      borderRadius: 8,
+      padding: 14,
+      alignItems: "center",
+      marginTop: 4,
+    },
+    addExBtnText: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.amber,
+      letterSpacing: 1,
+    },
+    exPicker: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      marginTop: 8,
+      overflow: "hidden",
+    },
+    exPickerEmpty: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      padding: 16,
+      textAlign: "center",
+      lineHeight: 20,
+    },
+    exPickerItem: {
+      padding: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    exPickerItemAdded: {
+      backgroundColor: colors.amber + "11",
+    },
+    exPickerItemText: {
+      fontFamily: fonts.body,
+      fontSize: 14,
+      color: colors.text,
+    },
+    exPickerItemTextAdded: {
+      color: colors.amber,
+    },
+    restCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      padding: 30,
+      alignItems: "center",
+      marginTop: 20,
+    },
+    restEmoji: {
+      fontSize: 40,
+      marginBottom: 12,
+    },
+    restTitle: {
+      fontFamily: fonts.display,
+      fontSize: 24,
+      color: colors.muted,
+      letterSpacing: 2,
+      marginBottom: 8,
+    },
+    restSub: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      textAlign: "center",
+      lineHeight: 20,
+    },
+  });
+}

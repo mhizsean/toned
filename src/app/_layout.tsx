@@ -6,19 +6,20 @@ import {
   DMSans_400Regular,
   DMSans_500Medium,
 } from "@expo-google-fonts/dm-sans";
-import { colors, fonts } from "../constants/theme";
+import { fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { Ionicons } from "@expo/vector-icons";
+import { ThemeProvider, useTheme } from "../context/ThemeContext";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function AppLayout() {
   const [fontsLoaded] = useFonts({
     BebasNeue_400Regular,
     DMSans_400Regular,
     DMSans_500Medium,
   });
-
+  const { colors } = useTheme();
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
   const loadSchedule = useWorkoutStore((state) => state.loadSchedule);
@@ -99,5 +100,13 @@ export default function RootLayout() {
 
       <Tabs.Screen name="day-setup" options={{ href: null }} />
     </Tabs>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AppLayout />
+    </ThemeProvider>
   );
 }

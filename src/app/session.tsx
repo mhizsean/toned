@@ -8,10 +8,12 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
-import { colors, fonts } from "../constants/theme";
+import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import ExercisePicker from "../components/ExercisePicker";
+import { useTheme } from "../context/ThemeContext";
+import { useMemo } from "react";
 
 export default function SessionScreen() {
   const {
@@ -22,7 +24,8 @@ export default function SessionScreen() {
     finishSession,
     discardSession,
   } = useWorkoutStore();
-
+  const { colors } = useTheme();
+  const s = useMemo(() => createStyles(colors), [colors]);
   const [expandedEx, setExpandedEx] = useState<number | null>(null);
   const [inputs, setInputs] = useState<
     Record<number, { w: string; r: string }>
@@ -60,7 +63,6 @@ export default function SessionScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={s.safe}>
-        {/* Header */}
         <View style={s.header}>
           <View>
             <Text style={s.title}>SESSION</Text>
@@ -75,7 +77,6 @@ export default function SessionScreen() {
         </View>
 
         <ScrollView contentContainerStyle={s.scroll}>
-          {/* Exercise cards */}
           {activeSession.exercises.map((ex, exIdx) => {
             const isOpen = expandedEx === exIdx;
             const inp = inputs[exIdx] || { w: "", r: "" };
@@ -85,7 +86,6 @@ export default function SessionScreen() {
 
             return (
               <View key={exIdx} style={[s.exCard, isOpen && s.exCardOpen]}>
-                {/* Card header */}
                 <TouchableOpacity
                   style={s.exCardHeader}
                   onPress={() => setExpandedEx(isOpen ? null : exIdx)}
@@ -101,10 +101,8 @@ export default function SessionScreen() {
                   <Text style={s.chevron}>{isOpen ? "▲" : "▼"}</Text>
                 </TouchableOpacity>
 
-                {/* Expanded body */}
                 {isOpen && (
                   <View style={s.exCardBody}>
-                    {/* Sets list */}
                     {ex.sets.map((set, sIdx) => (
                       <View key={sIdx} style={s.setRow}>
                         <Text style={s.setInfo}>
@@ -119,7 +117,6 @@ export default function SessionScreen() {
                       </View>
                     ))}
 
-                    {/* Add set inputs */}
                     <View style={s.inputRow}>
                       <TextInput
                         style={s.input}
@@ -161,7 +158,6 @@ export default function SessionScreen() {
             );
           })}
 
-          {/* Add exercise button */}
           <TouchableOpacity
             style={s.addExBtn}
             onPress={() => setShowPicker(true)}
@@ -169,7 +165,6 @@ export default function SessionScreen() {
             <Text style={s.addExBtnText}>+ ADD EXERCISE</Text>
           </TouchableOpacity>
 
-          {/* Finish button */}
           {activeSession.exercises.length > 0 && (
             <TouchableOpacity style={s.finishBtn} onPress={handleFinish}>
               <Text style={s.finishBtnText}>FINISH SESSION ✓</Text>
@@ -190,162 +185,164 @@ export default function SessionScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: 20,
-    paddingBottom: 8,
-  },
-  title: {
-    fontFamily: fonts.display,
-    fontSize: 36,
-    color: colors.text,
-    letterSpacing: 2,
-    lineHeight: 38,
-  },
-  sub: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.muted,
-    marginTop: 2,
-  },
-  discard: {
-    fontFamily: fonts.display,
-    fontSize: 14,
-    color: colors.muted,
-    letterSpacing: 1,
-    marginTop: 6,
-  },
-  scroll: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  exCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    marginBottom: 10,
-    overflow: "hidden",
-  },
-  exCardOpen: {
-    borderColor: colors.amber + "55",
-  },
-  exCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 14,
-  },
-  exName: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 14,
-    color: colors.text,
-  },
-  exMeta: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    color: colors.muted,
-    marginTop: 3,
-  },
-  chevron: {
-    color: colors.muted,
-    fontSize: 10,
-  },
-  exCardBody: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    padding: 14,
-  },
-  setRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: colors.background,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 8,
-    marginBottom: 6,
-  },
-  setInfo: {
-    fontFamily: fonts.mono,
-    fontSize: 12,
-    color: colors.text,
-  },
-  setNum: {
-    color: colors.muted,
-    fontSize: 10,
-  },
-  removeSet: {
-    color: colors.muted,
-    fontSize: 16,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 8,
-  },
-  input: {
-    width: 72,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    padding: 10,
-    fontFamily: fonts.mono,
-    fontSize: 13,
-    color: colors.text,
-    textAlign: "center",
-  },
-  multiply: {
-    color: colors.muted,
-    fontSize: 14,
-  },
-  addSetBtn: {
-    flex: 1,
-    backgroundColor: colors.amber,
-    borderRadius: 6,
-    padding: 10,
-    alignItems: "center",
-  },
-  addSetBtnText: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.background,
-    letterSpacing: 1,
-  },
-  addExBtn: {
-    borderWidth: 1,
-    borderColor: colors.amber + "66",
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  addExBtnText: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.amber,
-    letterSpacing: 1,
-  },
-  finishBtn: {
-    backgroundColor: colors.amber,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-  },
-  finishBtnText: {
-    fontFamily: fonts.display,
-    fontSize: 20,
-    color: colors.background,
-    letterSpacing: 2,
-  },
-});
+function createStyles(colors: ColorScheme) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      padding: 20,
+      paddingBottom: 8,
+    },
+    title: {
+      fontFamily: fonts.display,
+      fontSize: 36,
+      color: colors.text,
+      letterSpacing: 2,
+      lineHeight: 38,
+    },
+    sub: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.muted,
+      marginTop: 2,
+    },
+    discard: {
+      fontFamily: fonts.display,
+      fontSize: 14,
+      color: colors.muted,
+      letterSpacing: 1,
+      marginTop: 6,
+    },
+    scroll: {
+      padding: 20,
+      paddingTop: 10,
+    },
+    exCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      marginBottom: 10,
+      overflow: "hidden",
+    },
+    exCardOpen: {
+      borderColor: colors.amber + "55",
+    },
+    exCardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 14,
+    },
+    exName: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 14,
+      color: colors.text,
+    },
+    exMeta: {
+      fontFamily: fonts.mono,
+      fontSize: 10,
+      color: colors.muted,
+      marginTop: 3,
+    },
+    chevron: {
+      color: colors.muted,
+      fontSize: 10,
+    },
+    exCardBody: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      padding: 14,
+    },
+    setRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: colors.background,
+      borderRadius: 5,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 8,
+      marginBottom: 6,
+    },
+    setInfo: {
+      fontFamily: fonts.mono,
+      fontSize: 12,
+      color: colors.text,
+    },
+    setNum: {
+      color: colors.muted,
+      fontSize: 10,
+    },
+    removeSet: {
+      color: colors.muted,
+      fontSize: 16,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 8,
+    },
+    input: {
+      width: 72,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 6,
+      padding: 10,
+      fontFamily: fonts.mono,
+      fontSize: 13,
+      color: colors.text,
+      textAlign: "center",
+    },
+    multiply: {
+      color: colors.muted,
+      fontSize: 14,
+    },
+    addSetBtn: {
+      flex: 1,
+      backgroundColor: colors.amber,
+      borderRadius: 6,
+      padding: 10,
+      alignItems: "center",
+    },
+    addSetBtnText: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.background,
+      letterSpacing: 1,
+    },
+    addExBtn: {
+      borderWidth: 1,
+      borderColor: colors.amber + "66",
+      borderRadius: 8,
+      padding: 14,
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    addExBtnText: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.amber,
+      letterSpacing: 1,
+    },
+    finishBtn: {
+      backgroundColor: colors.amber,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+    },
+    finishBtnText: {
+      fontFamily: fonts.display,
+      fontSize: 20,
+      color: colors.background,
+      letterSpacing: 2,
+    },
+  });
+}
