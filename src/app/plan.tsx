@@ -5,11 +5,18 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getDayFocusLabel } from "../data/exerciseTypes";
-import { getCatalogueGrouped } from "../utils/exerciseCatalogue";
+import {
+  ExerciseTagId,
+  filterLibraryByTag,
+  findExercise,
+  getActiveLibraryTags,
+  getCatalogueGrouped,
+  getExerciseTagLabel,
+} from "../utils/exerciseCatalogue";
 import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
@@ -21,11 +28,33 @@ export default function PlanScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [tab, setTab] = useState<"schedule" | "library">("schedule");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [libraryTag, setLibraryTag] = useState<ExerciseTagId | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const { libraryExercises, weeklySchedule } = useWorkoutStore();
   const typeBadge = getTypeBadge(colors);
 
-  const libByCategory = getCatalogueGrouped({ names: libraryExercises });
+  const availableTags = useMemo(
+    () => getActiveLibraryTags(libraryExercises),
+    [libraryExercises],
+  );
+
+  const filteredLibrary = useMemo(
+    () => filterLibraryByTag(libraryExercises, libraryTag),
+    [libraryExercises, libraryTag],
+  );
+
+  const libByCategory = useMemo(
+    () => getCatalogueGrouped({ names: filteredLibrary }),
+    [filteredLibrary],
+  );
+
+  const hasFilteredResults = Object.keys(libByCategory).length > 0;
+
+  useEffect(() => {
+    if (libraryTag && !availableTags.includes(libraryTag)) {
+      setLibraryTag(null);
+    }
+  }, [libraryTag, availableTags]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -151,33 +180,110 @@ export default function PlanScreen() {
                 </Text>
               </View>
             ) : (
-              Object.entries(libByCategory).map(([cat, exs]) => {
-                const open = expandedCat === cat;
-                return (
-                  <View key={cat} style={styles.catCard}>
-                    <TouchableOpacity
-                      onPress={() => setExpandedCat(open ? null : cat)}
-                      style={styles.catHeader}
+              <>
+                {availableTags.length > 0 && (
+                  <View style={styles.tagFilterSection}>
+                    <Text style={styles.tagFilterLabel}>FILTER BY TAG</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.tagFilterRow}
                     >
-                      <Text style={styles.catTitle}>{cat}</Text>
-                      <Text style={styles.catCount}>
-                        {open
-                          ? "▲"
-                          : `${exs.length} exercise${exs.length !== 1 ? "s" : ""} ▼`}
-                      </Text>
-                    </TouchableOpacity>
-                    {open && (
-                      <View style={styles.catBody}>
-                        {exs.map((ex) => (
-                          <View key={ex} style={styles.libExRow}>
-                            <Text style={styles.libExName}>{ex}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
+                      <TouchableOpacity
+                        style={[
+                          styles.tagFilterPill,
+                          !libraryTag && styles.tagFilterPillActive,
+                        ]}
+                        onPress={() => setLibraryTag(null)}
+                      >
+                        <Text
+                          style={[
+                            styles.tagFilterPillText,
+                            !libraryTag && styles.tagFilterPillTextActive,
+                          ]}
+                        >
+                          All
+                        </Text>
+                      </TouchableOpacity>
+                      {availableTags.map((tag) => {
+                        const active = libraryTag === tag;
+                        return (
+                          <TouchableOpacity
+                            key={tag}
+                            style={[
+                              styles.tagFilterPill,
+                              active && styles.tagFilterPillActive,
+                            ]}
+                            onPress={() =>
+                              setLibraryTag(active ? null : tag)
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.tagFilterPillText,
+                                active && styles.tagFilterPillTextActive,
+                              ]}
+                            >
+                              {getExerciseTagLabel(tag)}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
                   </View>
-                );
-              })
+                )}
+
+                {!hasFilteredResults ? (
+                  <View style={styles.libEmpty}>
+                    <Text style={styles.libEmptyTitle}>NO MATCHES</Text>
+                    <Text style={styles.libEmptySub}>
+                      No exercises in your library match this tag
+                    </Text>
+                  </View>
+                ) : (
+                  Object.entries(libByCategory).map(([cat, exs]) => {
+                    const open = expandedCat === cat;
+                    return (
+                      <View key={cat} style={styles.catCard}>
+                        <TouchableOpacity
+                          onPress={() => setExpandedCat(open ? null : cat)}
+                          style={styles.catHeader}
+                        >
+                          <Text style={styles.catTitle}>{cat}</Text>
+                          <Text style={styles.catCount}>
+                            {open
+                              ? "▲"
+                              : `${exs.length} exercise${exs.length !== 1 ? "s" : ""} ▼`}
+                          </Text>
+                        </TouchableOpacity>
+                        {open && (
+                          <View style={styles.catBody}>
+                            {exs.map((ex) => {
+                              const tags = findExercise(ex)?.tags ?? [];
+                              return (
+                                <View key={ex} style={styles.libExRow}>
+                                  <Text style={styles.libExName}>{ex}</Text>
+                                  {tags.length > 0 && (
+                                    <View style={styles.libExTagRow}>
+                                      {tags.map((tag) => (
+                                        <View key={tag} style={styles.libExTag}>
+                                          <Text style={styles.libExTagText}>
+                                            {getExerciseTagLabel(tag)}
+                                          </Text>
+                                        </View>
+                                      ))}
+                                    </View>
+                                  )}
+                                </View>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })
+                )}
+              </>
             )}
 
             <TouchableOpacity
@@ -349,6 +455,42 @@ function createStyles(colors: ColorScheme) {
     },
     libWrap: {
       gap: 10,
+      paddingHorizontal: 20,
+    },
+    tagFilterSection: {
+      marginBottom: 4,
+    },
+    tagFilterLabel: {
+      fontFamily: fonts.body,
+      fontSize: 10,
+      color: colors.muted,
+      letterSpacing: 2,
+      marginBottom: 8,
+    },
+    tagFilterRow: {
+      flexDirection: "row",
+      gap: 6,
+      paddingBottom: 4,
+    },
+    tagFilterPill: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+    },
+    tagFilterPillActive: {
+      backgroundColor: colors.amber + "22",
+      borderColor: colors.amber + "66",
+    },
+    tagFilterPillText: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.muted,
+    },
+    tagFilterPillTextActive: {
+      color: colors.amber,
     },
     catCard: {
       backgroundColor: colors.surface,
@@ -382,10 +524,29 @@ function createStyles(colors: ColorScheme) {
       paddingVertical: 12,
       borderBottomWidth: 1,
       borderColor: colors.border,
+      gap: 6,
     },
     libExName: {
       fontFamily: fonts.body,
       fontSize: 14,
+      color: colors.text,
+    },
+    libExTagRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 4,
+    },
+    libExTag: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    libExTagText: {
+      fontFamily: fonts.body,
+      fontSize: 9,
       color: colors.muted,
     },
     libEmpty: {

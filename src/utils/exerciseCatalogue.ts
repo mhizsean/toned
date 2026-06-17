@@ -68,7 +68,7 @@ export function inferTags(exercise: ExerciseInfo): string[] {
   const tags: string[] = [];
   if (CARDIO_EXERCISES.has(exercise.name)) tags.push("cardio");
   if (POSTURE_EXERCISES.has(exercise.name)) tags.push("posture");
-  if (exercise.equipment === "Bodyweight") tags.push("home-friendly");
+  if (exercise.equipment.includes("Bodyweight")) tags.push("home-friendly");
   if (exercise.category === "Active Recovery") tags.push("recovery");
   return tags;
 }
@@ -233,4 +233,34 @@ export function normalizeExerciseNames(names: string[]): string[] {
       seen.add(n);
       return true;
     });
+}
+
+export type ExerciseTagId = "cardio" | "posture" | "home-friendly" | "recovery";
+
+export const LIBRARY_FILTER_TAGS: { id: ExerciseTagId; label: string }[] = [
+  { id: "home-friendly", label: "Home" },
+  { id: "cardio", label: "Cardio" },
+  { id: "posture", label: "Posture" },
+  { id: "recovery", label: "Recovery" },
+];
+
+export function getExerciseTagLabel(tagId: string): string {
+  return LIBRARY_FILTER_TAGS.find((t) => t.id === tagId)?.label ?? tagId;
+}
+
+export function filterLibraryByTag(
+  names: string[],
+  tag: ExerciseTagId | null,
+): string[] {
+  if (!tag) return names;
+  return names.filter((name) => findExercise(name)?.tags?.includes(tag));
+}
+
+/** Tags that appear on at least one exercise in the given library list. */
+export function getActiveLibraryTags(names: string[]): ExerciseTagId[] {
+  const found = new Set<string>();
+  for (const name of names) {
+    findExercise(name)?.tags?.forEach((t) => found.add(t));
+  }
+  return LIBRARY_FILTER_TAGS.filter((t) => found.has(t.id)).map((t) => t.id);
 }
