@@ -1,3 +1,5 @@
+import type { ExerciseCategory } from "../data/exerciseTypes";
+
 export type WorkoutSet = {
   weight: number;
   reps: number;
@@ -36,7 +38,7 @@ export type PlannedScheduleExercise = {
 
 export type DaySchedule = {
   type: DayType;
-  focus: string;
+  focuses: ExerciseCategory[];
   exercises: PlannedScheduleExercise[];
 };
 

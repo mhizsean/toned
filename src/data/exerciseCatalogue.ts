@@ -1,8 +1,17 @@
+import {
+  ExerciseCategory,
+  ExerciseType,
+  RepLabel,
+} from "./exerciseTypes";
+
 export type ExerciseInfo = {
+  id?: string;
   name: string;
-  category: "Glutes & Legs" | "Upper Body" | "Core & Posture" | "Full Body" | "Active Recovery";
+  category: ExerciseCategory;
   equipment: string;
-  repLabel: "reps" | "per leg" | "per arm" | "per side";
+  repLabel: RepLabel;
+  exerciseType?: ExerciseType;
+  tags?: string[];
   muscles: string[];
   steps: string[];
   tips: string[];
@@ -1833,9 +1842,11 @@ export const EXERCISE_CATALOGUE: ExerciseInfo[] = [
   },
   {
     name: "Mountain Climber",
-    category: "Core & Posture",
+    category: "Full Body",
     equipment: "Bodyweight",
     repLabel: "per side",
+    tags: ["cardio"],
+    exerciseType: "cardio",
     muscles: ["Core", "Hip Flexors", "Shoulders", "Cardio"],
     steps: [
       "Start in a high plank position.",
@@ -2322,6 +2333,102 @@ export const EXERCISE_CATALOGUE: ExerciseInfo[] = [
     ],
     mistakes: [
       "Rushing — spend time in each position.",
+    ],
+  },
+
+  {
+    name: "Chest Press (Machine)",
+    category: "Upper Body",
+    equipment: "Machine",
+    repLabel: "reps",
+    muscles: ["Chest", "Triceps", "Front Deltoids"],
+    steps: [
+      "Adjust the seat so handles are at mid-chest height.",
+      "Sit with your back flat against the pad, feet flat on the floor.",
+      "Grip the handles with a neutral or overhand grip.",
+      "Press forward until arms are extended without locking elbows.",
+      "Return with control to the start position.",
+    ],
+    tips: [
+      "Keep your shoulder blades pinched back into the pad.",
+      "Don't let your lower back arch away from the seat.",
+      "A good alternative when the bench press stations are taken.",
+    ],
+    mistakes: [
+      "Pressing with shoulders instead of chest.",
+      "Bouncing out of the bottom position.",
+      "Seat set too low — turns into a shoulder press.",
+    ],
+  },
+  {
+    name: "Jump Rope",
+    category: "Full Body",
+    equipment: "Bodyweight",
+    repLabel: "seconds",
+    tags: ["cardio", "home-friendly"],
+    exerciseType: "cardio",
+    muscles: ["Calves", "Shoulders", "Core", "Cardio"],
+    steps: [
+      "Hold rope handles at hip height, elbows close to your sides.",
+      "Jump on the balls of your feet with a slight bend in the knees.",
+      "Rotate the rope with your wrists, not your whole arms.",
+      "Land softly and keep a steady rhythm.",
+    ],
+    tips: [
+      "Start with 30-second intervals if you're new to jumping rope.",
+      "Great as a warm-up or cardio finisher.",
+    ],
+    mistakes: [
+      "Jumping too high — small hops are more efficient.",
+      "Swinging arms too wide.",
+      "Landing flat-footed and heavy.",
+    ],
+  },
+  {
+    name: "Resistance Band Clamshell",
+    category: "Glutes & Legs",
+    equipment: "Resistance Band",
+    repLabel: "per side",
+    tags: ["home-friendly"],
+    muscles: ["Glute Medius", "Hip Abductors"],
+    steps: [
+      "Loop a resistance band above your knees.",
+      "Lie on your side with hips stacked and knees bent at 45°.",
+      "Keep your feet together and lift the top knee toward the ceiling.",
+      "Squeeze at the top, then lower with control.",
+      "Complete all reps on one side before switching.",
+    ],
+    tips: [
+      "Excellent glute activation before leg day.",
+      "Keep your hips stacked — don't roll backward.",
+    ],
+    mistakes: [
+      "Rotating the hips back to get more range.",
+      "Moving too fast without a squeeze at the top.",
+    ],
+  },
+  {
+    name: "Incline Walk",
+    category: "Full Body",
+    equipment: "Treadmill",
+    repLabel: "seconds",
+    tags: ["cardio"],
+    exerciseType: "cardio",
+    muscles: ["Glutes", "Hamstrings", "Calves", "Cardio"],
+    steps: [
+      "Set treadmill incline to 10–15%.",
+      "Walk at a brisk pace — you should feel your glutes working.",
+      "Stand tall, don't hold the handrails unless needed for balance.",
+      "Maintain a steady pace for your target duration.",
+    ],
+    tips: [
+      "12–15% incline at 3–4 mph is a solid glute-focused cardio option.",
+      "Perfect for rest-day active recovery.",
+    ],
+    mistakes: [
+      "Holding the rails and leaning back.",
+      "Incline too low — becomes regular walking.",
+      "Overstriding.",
     ],
   },
 ];

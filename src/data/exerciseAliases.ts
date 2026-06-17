@@ -1,0 +1,20 @@
+/** Maps legacy or shorthand names to canonical catalogue names. */
+export const EXERCISE_ALIASES: Record<string, string> = {
+  "Hip Thrust (Smith)": "Hip Thrust (Smith Machine)",
+  "Sumo Squat": "Sumo Squat (Dumbbell)",
+  RDL: "Romanian Deadlift (RDL)",
+  "Hamstring Curl": "Seated Hamstring Curl (Machine)",
+  "Hip Abduction": "Hip Abduction (Machine)",
+  "Glute Bridge": "Glute Bridge (Bodyweight)",
+  "Lat Pulldown": "Lat Pulldown (Cable)",
+  "Dumbbell Row": "Single Arm Dumbbell Row",
+  "Rear Delt Fly": "Rear Delt Fly (Dumbbell)",
+  "Shoulder Press": "Dumbbell Shoulder Press",
+  "Face Pull": "Face Pull (Cable)",
+  "Chest Press": "Chest Press (Machine)",
+  "Bicep Curl": "Bicep Curl (Barbell)",
+  "Tricep Pushdown": "Tricep Pushdown (Cable)",
+  "Ab Wheel": "Ab Wheel Rollout",
+  "Pallof Press": "Pallof Press (Cable)",
+  "Step-Up": "Step Up",
+};

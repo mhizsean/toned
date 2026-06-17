@@ -15,25 +15,24 @@ import { DayType, PlannedScheduleExercise } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
+import {
+  ExerciseCategory,
+  EXERCISE_CATEGORIES,
+  getCategoryDisplayLabel,
+  getScheduleFocuses,
+  toggleFocus,
+} from "../data/exerciseTypes";
 import ExerciseInfoButton from "../components/ExerciseInfoButton";
 import RemoveButton from "../components/RemoveButton";
 import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
 import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
-import { stripEmoji } from "../utils/text";
 import { confirmDestructive } from "../utils/alerts";
+import { filterPlannedExercisesByFocuses } from "../utils/exerciseCatalogue";
 
 const DAY_TYPES: { label: string; value: DayType }[] = [
   { label: "🏋🏽 Gym", value: "gym" },
   { label: "🏠 Home", value: "home" },
   { label: "😴 Rest", value: "rest" },
-];
-
-const FOCUS_OPTIONS = [
-  "🍑 Glutes & Legs",
-  "💪 Upper Body",
-  "🧘 Core & Posture",
-  "🔥 Full Body",
-  "💆 Active Recovery",
 ];
 
 export default function DaySetupScreen() {
@@ -48,7 +47,9 @@ export default function DaySetupScreen() {
 
   const [isEditing, setIsEditing] = useState(!existing);
   const [type, setType] = useState<DayType>(existing?.type || "gym");
-  const [focus, setFocus] = useState(existing?.focus || "");
+  const [focuses, setFocuses] = useState<ExerciseCategory[]>(
+    getScheduleFocuses(existing),
+  );
   const [showFocusPicker, setShowFocusPicker] = useState(false);
   const [exercises, setExercises] = useState<PlannedScheduleExercise[]>(
     existing?.exercises || [],
@@ -58,25 +59,26 @@ export default function DaySetupScreen() {
   const [originalType, setOriginalType] = useState<DayType>(
     existing?.type || "gym",
   );
-  const [originalFocus, setOriginalFocus] = useState(existing?.focus || "");
+  const [originalFocuses, setOriginalFocuses] = useState<ExerciseCategory[]>(
+    getScheduleFocuses(existing),
+  );
   const [originalExercises, setOriginalExercises] = useState<
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
 
-  const focusCategory = stripEmoji(focus);
-
   const filteredExercises = EXERCISE_CATALOGUE.filter(
-    (ex) => ex.category === focusCategory && libraryExercises.includes(ex.name),
+    (ex) =>
+      focuses.includes(ex.category) && libraryExercises.includes(ex.name),
   );
 
   useEffect(() => {
     const e = weeklySchedule[day];
     setIsEditing(!e);
     setType(e?.type || "gym");
-    setFocus(e?.focus || "");
+    setFocuses(getScheduleFocuses(e));
     setExercises(e?.exercises || []);
     setOriginalType(e?.type || "gym");
-    setOriginalFocus(e?.focus || "");
+    setOriginalFocuses(getScheduleFocuses(e));
     setOriginalExercises(e?.exercises || []);
     setShowFocusPicker(false);
     setShowExPicker(false);
@@ -84,10 +86,20 @@ export default function DaySetupScreen() {
 
   const hasChanges =
     type !== originalType ||
-    focus !== originalFocus ||
+    JSON.stringify([...focuses].sort()) !==
+      JSON.stringify([...originalFocuses].sort()) ||
     JSON.stringify(exercises) !== JSON.stringify(originalExercises);
 
   const isRest = type === "rest";
+  const canAddExercises = isEditing && focuses.length > 0;
+
+  const applyFocusChange = (nextFocuses: ExerciseCategory[]) => {
+    setFocuses(nextFocuses);
+    setExercises((prev) =>
+      filterPlannedExercisesByFocuses(prev, nextFocuses),
+    );
+    if (nextFocuses.length === 0) setShowExPicker(false);
+  };
 
   const addExercise = (name: string) => {
     if (exercises.find((e) => e.name === name)) return;
@@ -100,17 +112,17 @@ export default function DaySetupScreen() {
   };
 
   const handleSave = () => {
-    if (!isRest && !focus) {
-      Alert.alert("Missing Focus", "Please select a focus for this day.");
+    if (!isRest && focuses.length === 0) {
+      Alert.alert("Missing Focus", "Please select at least one focus for this day.");
       return;
     }
     saveDaySchedule(day, {
       type,
-      focus: isRest ? "Rest Day" : focus,
+      focuses: isRest ? [] : focuses,
       exercises: isRest ? [] : exercises,
     });
     setOriginalType(type);
-    setOriginalFocus(focus);
+    setOriginalFocuses(focuses);
     setOriginalExercises(exercises);
     setIsEditing(false);
     router.navigate("/plan");
@@ -164,7 +176,15 @@ export default function DaySetupScreen() {
               <TouchableOpacity
                 key={t.value}
                 style={[s.typeBtn, type === t.value && s.typeBtnActive]}
-                onPress={() => isEditing && setType(t.value)}
+                onPress={() => {
+                  if (!isEditing) return;
+                  setType(t.value);
+                  if (t.value === "rest") {
+                    setFocuses([]);
+                    setExercises([]);
+                    setShowExPicker(false);
+                  }
+                }}
                 activeOpacity={isEditing ? 0.7 : 1}
               >
                 <Text
@@ -181,46 +201,82 @@ export default function DaySetupScreen() {
 
           {!isRest && (
             <>
-              <Text style={s.sectionLabel}>FOCUS</Text>
-              <TouchableOpacity
-                style={s.focusBtn}
-                onPress={() =>
-                  isEditing && setShowFocusPicker(!showFocusPicker)
-                }
-                activeOpacity={isEditing ? 0.7 : 1}
-              >
-                <Text style={[s.focusBtnText, !focus && s.placeholder]}>
-                  {focus || "Select focus..."}
-                </Text>
-                {isEditing && (
+              <Text style={s.sectionLabel}>FOCUS · SELECT ONE OR MORE</Text>
+
+              {focuses.length > 0 && (
+                <View style={s.focusChipRow}>
+                  {focuses.map((f) => (
+                    <View key={f} style={s.focusChip}>
+                      <Text style={s.focusChipText}>
+                        {getCategoryDisplayLabel(f)}
+                      </Text>
+                      {isEditing && (
+                        <TouchableOpacity
+                          onPress={() =>
+                            applyFocusChange(toggleFocus(focuses, f))
+                          }
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Text style={s.focusChipRemove}>✕</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {isEditing && (
+                <TouchableOpacity
+                  style={s.focusBtn}
+                  onPress={() => setShowFocusPicker(!showFocusPicker)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[s.focusBtnText, focuses.length === 0 && s.placeholder]}>
+                    {focuses.length === 0
+                      ? "Select focus areas..."
+                      : "Add or change focus"}
+                  </Text>
                   <Text style={s.chevron}>{showFocusPicker ? "▲" : "▼"}</Text>
-                )}
-              </TouchableOpacity>
+                </TouchableOpacity>
+              )}
+
+              {!isEditing && focuses.length === 0 && (
+                <Text style={s.focusEmpty}>No focus set</Text>
+              )}
 
               {showFocusPicker && isEditing && (
                 <View style={s.focusDropdown}>
-                  {FOCUS_OPTIONS.map((f) => (
-                    <TouchableOpacity
-                      key={f}
-                      style={[
-                        s.focusOption,
-                        focus === f && s.focusOptionActive,
-                      ]}
-                      onPress={() => {
-                        setFocus(f);
-                        setShowFocusPicker(false);
-                      }}
-                    >
-                      <Text
+                  {EXERCISE_CATEGORIES.map((cat) => {
+                    const selected = focuses.includes(cat);
+                    return (
+                      <TouchableOpacity
+                        key={cat}
                         style={[
-                          s.focusOptionText,
-                          focus === f && s.focusOptionTextActive,
+                          s.focusOption,
+                          selected && s.focusOptionActive,
                         ]}
+                        onPress={() =>
+                          applyFocusChange(toggleFocus(focuses, cat))
+                        }
                       >
-                        {f}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            s.focusOptionText,
+                            selected && s.focusOptionTextActive,
+                          ]}
+                        >
+                          {getCategoryDisplayLabel(cat)}
+                        </Text>
+                        {selected && <Text style={s.focusCheck}>✓</Text>}
+                      </TouchableOpacity>
+                    );
+                  })}
+                  <TouchableOpacity
+                    style={s.focusDone}
+                    onPress={() => setShowFocusPicker(false)}
+                  >
+                    <Text style={s.focusDoneText}>DONE</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -228,7 +284,11 @@ export default function DaySetupScreen() {
 
               {exercises.length === 0 && (
                 <View style={s.exEmpty}>
-                  <Text style={s.exEmptyText}>No exercises added yet</Text>
+                  <Text style={s.exEmptyText}>
+                    {focuses.length === 0
+                      ? "Select focus areas above to start adding exercises"
+                      : "No exercises added yet"}
+                  </Text>
                 </View>
               )}
               {exercises.map((ex, i) => (
@@ -245,7 +305,7 @@ export default function DaySetupScreen() {
                 </View>
               ))}
 
-              {isEditing && (
+              {canAddExercises && (
                 <TouchableOpacity
                   style={s.addExBtn}
                   onPress={() => setShowExPicker(!showExPicker)}
@@ -254,15 +314,15 @@ export default function DaySetupScreen() {
                 </TouchableOpacity>
               )}
 
-              {showExPicker && isEditing && (
+              {showExPicker && canAddExercises && (
                 <View style={s.exPicker}>
                   {filteredExercises.length === 0 ? (
                     <Text style={s.exPickerEmpty}>
                       {libraryExercises.length === 0
                         ? "No exercises in your library yet. Add some in the Library tab first."
-                        : focus
-                          ? "No library exercises match this focus. Add relevant exercises in the Library tab."
-                          : "Select a focus first to see matching exercises."}
+                        : focuses.length === 0
+                          ? "Select at least one focus to see matching exercises."
+                          : "No library exercises match your selected focus areas. Add relevant exercises in the Library tab."}
                     </Text>
                   ) : (
                     filteredExercises.map((ex) => {
@@ -395,6 +455,39 @@ function createStyles(colors: ColorScheme) {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+      marginTop: 8,
+    },
+    focusChipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 4,
+    },
+    focusChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: colors.amber + "22",
+      borderWidth: 1,
+      borderColor: colors.amber + "66",
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+    },
+    focusChipText: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.amber,
+    },
+    focusChipRemove: {
+      color: colors.muted,
+      fontSize: 12,
+    },
+    focusEmpty: {
+      fontFamily: fonts.body,
+      fontSize: 14,
+      color: colors.muted,
+      paddingVertical: 8,
     },
     focusBtnText: {
       fontFamily: fonts.body,
@@ -420,6 +513,9 @@ function createStyles(colors: ColorScheme) {
       padding: 14,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
     focusOptionActive: {
       backgroundColor: colors.amber + "22",
@@ -431,6 +527,22 @@ function createStyles(colors: ColorScheme) {
     },
     focusOptionTextActive: {
       color: colors.amber,
+    },
+    focusCheck: {
+      color: colors.amber,
+      fontSize: 14,
+      fontFamily: fonts.bodyMedium,
+    },
+    focusDone: {
+      padding: 14,
+      alignItems: "center",
+      backgroundColor: colors.amber + "11",
+    },
+    focusDoneText: {
+      fontFamily: fonts.display,
+      fontSize: 14,
+      color: colors.amber,
+      letterSpacing: 1,
     },
     exEmpty: {
       padding: 16,

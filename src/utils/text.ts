@@ -5,3 +5,5 @@ export function pluralize(count: number, word: string): string {
 export function stripEmoji(text: string): string {
   return text.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim();
 }
+
+export { getDayFocusLabel } from "../data/exerciseTypes";

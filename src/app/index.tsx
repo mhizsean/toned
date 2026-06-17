@@ -17,7 +17,7 @@ import { TODAY } from "../constants/planning";
 import { WorkoutSet } from "../types";
 import TodayPlanSheet from "../components/TodayPlanSheet";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
-import { pluralize } from "../utils/text";
+import { pluralize, getDayFocusLabel } from "../utils/text";
 
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
@@ -109,8 +109,8 @@ export default function HomeScreen() {
           {todayPlan && todayPlan.type !== "rest" && (
             <View style={s.todayPlanBanner}>
               <Text style={s.todayPlanText}>
-                📋 {todayPlan.focus} · {todayPlan.exercises.length} exercises
-                loaded
+                📋 {getDayFocusLabel(todayPlan)} · {todayPlan.exercises.length}{" "}
+                exercises loaded
               </Text>
             </View>
           )}
@@ -149,7 +149,7 @@ export default function HomeScreen() {
 
         <TodayPlanSheet
           visible={showTodayPrompt}
-          focus={todayPlan?.focus}
+          focus={todayPlan ? getDayFocusLabel(todayPlan) : undefined}
           exercises={todayPlan?.exercises ?? []}
           onClose={() => setShowTodayPrompt(false)}
           onStartWithPlan={handleStartWithPlan}

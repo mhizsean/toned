@@ -8,7 +8,8 @@ import {
 import { useMemo, useState } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
+import { getDayFocusLabel } from "../data/exerciseTypes";
+import { getCatalogueGrouped } from "../utils/exerciseCatalogue";
 import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
@@ -24,16 +25,7 @@ export default function PlanScreen() {
   const { libraryExercises, weeklySchedule } = useWorkoutStore();
   const typeBadge = getTypeBadge(colors);
 
-  const libByCategory = EXERCISE_CATALOGUE.reduce(
-    (acc, ex) => {
-      if (libraryExercises.includes(ex.name)) {
-        if (!acc[ex.category]) acc[ex.category] = [];
-        acc[ex.category].push(ex.name);
-      }
-      return acc;
-    },
-    {} as Record<string, string[]>,
-  );
+  const libByCategory = getCatalogueGrouped({ names: libraryExercises });
 
   return (
     <SafeAreaProvider>
@@ -91,7 +83,9 @@ export default function PlanScreen() {
 
                     {schedule ? (
                       <>
-                        <Text style={styles.dayFocus}>{schedule.focus}</Text>
+                        <Text style={styles.dayFocus}>
+                          {getDayFocusLabel(schedule)}
+                        </Text>
                         {schedule.type !== "rest" &&
                           schedule.exercises.length > 0 && (
                             <View style={styles.exTagRow}>

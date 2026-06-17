@@ -14,6 +14,7 @@ import { useTheme } from "../context/ThemeContext";
 import DeleteIconButton from "../components/DeleteIconButton";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
 import { formatSet } from "../utils/formatWorkout";
+import { findExercise } from "../utils/exerciseCatalogue";
 
 export default function HistoryScreen() {
   const { sessions, deleteSession } = useWorkoutStore();
@@ -89,14 +90,18 @@ export default function HistoryScreen() {
                   {session.exercises.map((ex, i) => (
                     <View key={i} style={s.exSection}>
                       <Text style={s.exName}>{ex.name}</Text>
-                      {ex.sets.map((set, si) => (
+                      {ex.sets.map((set, si) => {
+                        const repLabel = findExercise(ex.name)?.repLabel;
+                        return (
                         <View key={si} style={s.setRow}>
                           <Text style={s.setNum}>#{si + 1}</Text>
                           <Text style={s.setInfo}>
-                            {formatSet(set.weight, set.reps)} reps
+                            {formatSet(set.weight, set.reps, repLabel)}
+                            {repLabel !== "seconds" ? " reps" : ""}
                           </Text>
                         </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   ))}
                 </View>

@@ -8,16 +8,20 @@ import {
 } from "react-native";
 import { useMemo, useState } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
-import { EXERCISE_CATEGORIES } from "../data/plans";
 import { useTheme } from "../context/ThemeContext";
 import BottomSheet from "./BottomSheet";
-import { filterCategoriesBySearch } from "../utils/exerciseCatalogue";
+import {
+  filterCategoriesBySearch,
+  getCatalogueGrouped,
+} from "../utils/exerciseCatalogue";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   onSelect: (name: string) => void;
   addedExercises: string[];
+  /** When set, only show these exercises (e.g. user's library). */
+  exercisePool?: string[];
 };
 
 export default function ExercisePicker({
@@ -25,12 +29,23 @@ export default function ExercisePicker({
   onClose,
   onSelect,
   addedExercises,
+  exercisePool,
 }: Props) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const [search, setSearch] = useState("");
 
-  const filteredCats = filterCategoriesBySearch(EXERCISE_CATEGORIES, search);
+  const grouped = useMemo(
+    () =>
+      getCatalogueGrouped({
+        names: exercisePool,
+        displayLabels: true,
+      }),
+    [exercisePool],
+  );
+
+  const filteredCats = filterCategoriesBySearch(grouped, search);
+  const isEmpty = Object.keys(filteredCats).length === 0;
 
   const handleSelect = (name: string) => {
     onSelect(name);
@@ -51,30 +66,40 @@ export default function ExercisePicker({
         autoFocus
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {Object.entries(filteredCats).map(([cat, exs]) => (
-          <View key={cat} style={s.category}>
-            <Text style={s.catLabel}>{cat}</Text>
-            <View style={s.pillRow}>
-              {exs.map((ex) => {
-                const added = addedExercises.includes(ex);
-                return (
-                  <TouchableOpacity
-                    key={ex}
-                    style={[s.pill, added && s.pillAdded]}
-                    onPress={() => !added && handleSelect(ex)}
-                  >
-                    <Text style={[s.pillText, added && s.pillTextAdded]}>
-                      {added ? "✓ " : ""}
-                      {ex}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+      {isEmpty ? (
+        <View style={s.empty}>
+          <Text style={s.emptyText}>
+            {exercisePool?.length === 0
+              ? "No exercises in your library yet. Add some in Plan → Library."
+              : "No exercises match your search."}
+          </Text>
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {Object.entries(filteredCats).map(([cat, exs]) => (
+            <View key={cat} style={s.category}>
+              <Text style={s.catLabel}>{cat}</Text>
+              <View style={s.pillRow}>
+                {exs.map((ex) => {
+                  const added = addedExercises.includes(ex);
+                  return (
+                    <TouchableOpacity
+                      key={ex}
+                      style={[s.pill, added && s.pillAdded]}
+                      onPress={() => !added && handleSelect(ex)}
+                    >
+                      <Text style={[s.pillText, added && s.pillTextAdded]}>
+                        {added ? "✓ " : ""}
+                        {ex}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
     </BottomSheet>
   );
 }
@@ -98,6 +123,17 @@ function createStyles(colors: ColorScheme) {
       fontSize: 14,
       color: colors.text,
       marginBottom: 16,
+    },
+    empty: {
+      padding: 24,
+      alignItems: "center",
+    },
+    emptyText: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      textAlign: "center",
+      lineHeight: 20,
     },
     category: {
       marginBottom: 18,

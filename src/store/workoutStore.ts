@@ -1,6 +1,40 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DaySchedule, Exercise, Session, WeeklySchedule, WorkoutSet } from '../types';
+import { DaySchedule, Session, WeeklySchedule, WorkoutSet } from '../types';
+import {
+  findExercise,
+  normalizeExerciseNames,
+  resolveExerciseName,
+} from '../utils/exerciseCatalogue';
+import { migrateDaySchedule } from '../data/exerciseTypes';
+
+function toCanonicalName(name: string): string {
+  return findExercise(name)?.name ?? resolveExerciseName(name);
+}
+
+function migrateSessions(sessions: Session[]): Session[] {
+  return sessions.map((session) => ({
+    ...session,
+    exercises: session.exercises.map((ex) => ({
+      ...ex,
+      name: toCanonicalName(ex.name),
+    })),
+  }));
+}
+
+function migrateSchedule(schedule: WeeklySchedule): WeeklySchedule {
+  const migrated: WeeklySchedule = {};
+  for (const [day, daySchedule] of Object.entries(schedule)) {
+    migrated[day] = migrateDaySchedule(
+      daySchedule as Parameters<typeof migrateDaySchedule>[0],
+    );
+    migrated[day].exercises = daySchedule.exercises.map((ex) => ({
+      ...ex,
+      name: toCanonicalName(ex.name),
+    }));
+  }
+  return migrated;
+}
 
 type WorkoutStore = {
   sessions: Session[];
@@ -31,7 +65,10 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   loadSessions: async () => {
     try {
       const data = await AsyncStorage.getItem('toned_sessions');
-      if (data) set({ sessions: JSON.parse(data) });
+      if (data) {
+        const sessions = migrateSessions(JSON.parse(data));
+        set({ sessions });
+      }
     } catch (e) {
       console.error('Failed to load sessions', e);
     }
@@ -42,7 +79,7 @@ startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
     id: Date.now().toString(),
     date: new Date().toISOString(),
     exercises: exercises.length > 0
-      ? exercises
+      ? exercises.map((ex) => ({ ...ex, name: toCanonicalName(ex.name) }))
       : [],
   };
   set({ activeSession: session });
@@ -51,10 +88,11 @@ startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
   addExercise: (name) => {
     const { activeSession } = get();
     if (!activeSession) return;
+    const canonical = toCanonicalName(name);
     set({
       activeSession: {
         ...activeSession,
-        exercises: [...activeSession.exercises, { name, sets: [] }],
+        exercises: [...activeSession.exercises, { name: canonical, sets: [] }],
       },
     });
   },
@@ -99,7 +137,10 @@ startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
 loadLibrary: async () => {
   try {
     const data = await AsyncStorage.getItem('toned_library');
-    if (data) set({ libraryExercises: JSON.parse(data) });
+    if (data) {
+      const libraryExercises = normalizeExerciseNames(JSON.parse(data));
+      set({ libraryExercises });
+    }
   } catch (e) {
     console.error('Failed to load library', e);
   }
@@ -107,15 +148,17 @@ loadLibrary: async () => {
 
 addToLibrary: async (name) => {
   const { libraryExercises } = get();
-  if (libraryExercises.includes(name)) return;
-  const updated = [...libraryExercises, name];
+  const canonical = toCanonicalName(name);
+  if (libraryExercises.includes(canonical)) return;
+  const updated = [...libraryExercises, canonical];
   set({ libraryExercises: updated });
   await AsyncStorage.setItem('toned_library', JSON.stringify(updated));
 },
 
 removeFromLibrary: async (name) => {
   const { libraryExercises } = get();
-  const updated = libraryExercises.filter((ex) => ex !== name);
+  const canonical = toCanonicalName(name);
+  const updated = libraryExercises.filter((ex) => ex !== canonical);
   set({ libraryExercises: updated });
   AsyncStorage.setItem('toned_library', JSON.stringify(updated));
 },
@@ -124,7 +167,7 @@ removeFromLibrary: async (name) => {
 loadSchedule: async () => {
   try {
     const data = await AsyncStorage.getItem('toned_schedule');
-    if (data) set({ weeklySchedule: JSON.parse(data) });
+    if (data) set({ weeklySchedule: migrateSchedule(JSON.parse(data)) });
   } catch (e) {
     console.error('Failed to load schedule', e);
   }
@@ -132,7 +175,14 @@ loadSchedule: async () => {
 
 saveDaySchedule: async (day, schedule) => {
   const { weeklySchedule } = get();
-  const updated = { ...weeklySchedule, [day]: schedule };
+  const normalized: DaySchedule = {
+    ...schedule,
+    exercises: schedule.exercises.map((ex) => ({
+      ...ex,
+      name: toCanonicalName(ex.name),
+    })),
+  };
+  const updated = { ...weeklySchedule, [day]: normalized };
   set({ weeklySchedule: updated });
   await AsyncStorage.setItem('toned_schedule', JSON.stringify(updated));
 },

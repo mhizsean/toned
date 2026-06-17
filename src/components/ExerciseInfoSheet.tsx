@@ -8,7 +8,7 @@ import {
 import { useMemo } from "react";
 import { fonts, ColorScheme } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
-import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
+import { findExercise, formatRepLabel } from "../utils/exerciseCatalogue";
 import BottomSheet from "./BottomSheet";
 
 type Props = {
@@ -20,7 +20,7 @@ export default function ExerciseInfoSheet({ exerciseName, onClose }: Props) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
 
-  const exercise = EXERCISE_CATALOGUE.find((e) => e.name === exerciseName);
+  const exercise = findExercise(exerciseName);
 
   if (!exerciseName || !exercise) return null;
 
@@ -36,6 +36,14 @@ export default function ExerciseInfoSheet({ exerciseName, onClose }: Props) {
             <View style={s.tag}>
               <Text style={s.tagText}>{exercise.category}</Text>
             </View>
+            <View style={s.tag}>
+              <Text style={s.tagText}>{formatRepLabel(exercise.repLabel)}</Text>
+            </View>
+            {exercise.exerciseType && exercise.exerciseType !== "strength" && (
+              <View style={s.tag}>
+                <Text style={s.tagText}>{exercise.exerciseType}</Text>
+              </View>
+            )}
           </View>
         </View>
         <TouchableOpacity onPress={onClose} style={s.closeBtn}>

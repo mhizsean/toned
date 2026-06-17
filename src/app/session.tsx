@@ -20,6 +20,11 @@ import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
 import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
 import { pluralize } from "../utils/text";
 import { formatSet, getTopWeight } from "../utils/formatWorkout";
+import {
+  findExercise,
+  getRepInputPlaceholder,
+  isTimedExercise,
+} from "../utils/exerciseCatalogue";
 
 export default function SessionScreen() {
   const {
@@ -29,6 +34,7 @@ export default function SessionScreen() {
     removeSet,
     finishSession,
     discardSession,
+    libraryExercises,
   } = useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -51,9 +57,15 @@ export default function SessionScreen() {
   }
 
   const handleAddSet = (exIdx: number) => {
+    const exerciseInfo = findExercise(activeSession.exercises[exIdx].name);
+    const timed = isTimedExercise(exerciseInfo);
     const { w, r } = inputs[exIdx] || {};
-    if (!w || !r) return;
-    addSet(exIdx, { weight: parseFloat(w), reps: parseInt(r) });
+    if (!r) return;
+    if (!timed && !w) return;
+    addSet(exIdx, {
+      weight: timed ? 0 : parseFloat(w),
+      reps: parseInt(r),
+    });
     setInputs((prev) => ({ ...prev, [exIdx]: { w: "", r: "" } }));
   };
 
@@ -86,7 +98,14 @@ export default function SessionScreen() {
           {activeSession.exercises.map((ex, exIdx) => {
             const isOpen = expandedEx === exIdx;
             const inp = inputs[exIdx] || { w: "", r: "" };
-            const sessionMax = getTopWeight(ex.sets);
+            const exerciseInfo = findExercise(ex.name);
+            const timed = isTimedExercise(exerciseInfo);
+            const repLabel = exerciseInfo?.repLabel;
+            const sessionMax = timed
+              ? ex.sets.length
+                ? Math.max(...ex.sets.map((set) => set.reps))
+                : null
+              : getTopWeight(ex.sets);
 
             return (
               <View
@@ -101,7 +120,9 @@ export default function SessionScreen() {
                     <Text style={s.exName}>{ex.name}</Text>
                     <Text style={s.exMeta}>
                       {ex.sets.length > 0
-                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax}kg`
+                        ? timed
+                          ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax}s`
+                          : `${pluralize(ex.sets.length, "set")} · top ${sessionMax}kg`
                         : "No sets yet"}
                     </Text>
                   </TouchableOpacity>
@@ -122,7 +143,7 @@ export default function SessionScreen() {
                       <View key={sIdx} style={s.setRow}>
                         <Text style={s.setInfo}>
                           <Text style={s.setNum}>#{sIdx + 1} </Text>
-                          {formatSet(set.weight, set.reps)}
+                          {formatSet(set.weight, set.reps, repLabel)}
                         </Text>
                         <RemoveButton
                           size={16}
@@ -132,23 +153,27 @@ export default function SessionScreen() {
                     ))}
 
                     <View style={s.inputRow}>
+                      {!timed && (
+                        <>
+                          <TextInput
+                            style={s.input}
+                            placeholder="kg"
+                            placeholderTextColor={colors.muted}
+                            keyboardType="numeric"
+                            value={inp.w}
+                            onChangeText={(v) =>
+                              setInputs((p) => ({
+                                ...p,
+                                [exIdx]: { ...p[exIdx], w: v },
+                              }))
+                            }
+                          />
+                          <Text style={s.multiply}>×</Text>
+                        </>
+                      )}
                       <TextInput
-                        style={s.input}
-                        placeholder="kg"
-                        placeholderTextColor={colors.muted}
-                        keyboardType="numeric"
-                        value={inp.w}
-                        onChangeText={(v) =>
-                          setInputs((p) => ({
-                            ...p,
-                            [exIdx]: { ...p[exIdx], w: v },
-                          }))
-                        }
-                      />
-                      <Text style={s.multiply}>×</Text>
-                      <TextInput
-                        style={s.input}
-                        placeholder="reps"
+                        style={[s.input, timed && s.inputWide]}
+                        placeholder={getRepInputPlaceholder(repLabel)}
                         placeholderTextColor={colors.muted}
                         keyboardType="numeric"
                         value={inp.r}
@@ -193,6 +218,7 @@ export default function SessionScreen() {
             setExpandedEx(activeSession.exercises.length);
           }}
           addedExercises={activeSession.exercises.map((ex) => ex.name)}
+          exercisePool={libraryExercises}
         />
 
         <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
@@ -312,6 +338,10 @@ function createStyles(colors: ColorScheme) {
       fontSize: 13,
       color: colors.text,
       textAlign: "center",
+    },
+    inputWide: {
+      flex: 1,
+      width: undefined,
     },
     multiply: {
       color: colors.muted,
