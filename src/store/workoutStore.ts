@@ -8,18 +8,24 @@ import {
 } from '../utils/exerciseCatalogue';
 import { migrateDaySchedule } from '../data/exerciseTypes';
 
+const ACTIVE_SESSION_KEY = 'toned_active_session';
+
 function toCanonicalName(name: string): string {
   return findExercise(name)?.name ?? resolveExerciseName(name);
 }
 
-function migrateSessions(sessions: Session[]): Session[] {
-  return sessions.map((session) => ({
+function migrateSession(session: Session): Session {
+  return {
     ...session,
     exercises: session.exercises.map((ex) => ({
       ...ex,
       name: toCanonicalName(ex.name),
     })),
-  }));
+  };
+}
+
+function migrateSessions(sessions: Session[]): Session[] {
+  return sessions.map(migrateSession);
 }
 
 function migrateSchedule(schedule: WeeklySchedule): WeeklySchedule {
@@ -39,13 +45,15 @@ function migrateSchedule(schedule: WeeklySchedule): WeeklySchedule {
 type WorkoutStore = {
   sessions: Session[];
   activeSession: Session | null;
-startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => void;
+  scheduleLoaded: boolean;
+  startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => void;
   addExercise: (name: string) => void;
   addSet: (exIndex: number, set: WorkoutSet) => void;
   removeSet: (exIndex: number, setIndex: number) => void;
   finishSession: () => void;
   discardSession: () => void;
   loadSessions: () => void;
+  loadActiveSession: () => void;
   deleteSession: (id: string) => void;
   libraryExercises: string[];
   addToLibrary: (name: string) => void;
@@ -56,9 +64,22 @@ startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => void;
   saveDaySchedule: (day: string, schedule: DaySchedule) => void;
 };
 
+async function persistActiveSession(session: Session | null) {
+  try {
+    if (session) {
+      await AsyncStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(session));
+    } else {
+      await AsyncStorage.removeItem(ACTIVE_SESSION_KEY);
+    }
+  } catch (e) {
+    console.error('Failed to persist active session', e);
+  }
+}
+
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   sessions: [],
   activeSession: null,
+  scheduleLoaded: false,
   libraryExercises: [],
   weeklySchedule: {},
 
@@ -74,27 +95,40 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     }
   },
 
-startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
-  const session: Session = {
-    id: Date.now().toString(),
-    date: new Date().toISOString(),
-    exercises: exercises.length > 0
-      ? exercises.map((ex) => ({ ...ex, name: toCanonicalName(ex.name) }))
-      : [],
-  };
-  set({ activeSession: session });
-},
+  loadActiveSession: async () => {
+    try {
+      const data = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
+      if (data) {
+        const activeSession = migrateSession(JSON.parse(data));
+        set({ activeSession });
+      }
+    } catch (e) {
+      console.error('Failed to load active session', e);
+    }
+  },
+
+  startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
+    const session: Session = {
+      id: Date.now().toString(),
+      date: new Date().toISOString(),
+      exercises: exercises.length > 0
+        ? exercises.map((ex) => ({ ...ex, name: toCanonicalName(ex.name) }))
+        : [],
+    };
+    set({ activeSession: session });
+    persistActiveSession(session);
+  },
 
   addExercise: (name) => {
     const { activeSession } = get();
     if (!activeSession) return;
     const canonical = toCanonicalName(name);
-    set({
-      activeSession: {
-        ...activeSession,
-        exercises: [...activeSession.exercises, { name: canonical, sets: [] }],
-      },
-    });
+    const next: Session = {
+      ...activeSession,
+      exercises: [...activeSession.exercises, { name: canonical, sets: [] }],
+    };
+    set({ activeSession: next });
+    persistActiveSession(next);
   },
 
   addSet: (exIndex, workoutSet) => {
@@ -103,7 +137,9 @@ startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
     const exercises = activeSession.exercises.map((ex, i) =>
       i !== exIndex ? ex : { ...ex, sets: [...ex.sets, workoutSet] }
     );
-    set({ activeSession: { ...activeSession, exercises } });
+    const next = { ...activeSession, exercises };
+    set({ activeSession: next });
+    persistActiveSession(next);
   },
 
   removeSet: (exIndex, setIndex) => {
@@ -112,7 +148,9 @@ startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
     const exercises = activeSession.exercises.map((ex, i) =>
       i !== exIndex ? ex : { ...ex, sets: ex.sets.filter((_, si) => si !== setIndex) }
     );
-    set({ activeSession: { ...activeSession, exercises } });
+    const next = { ...activeSession, exercises };
+    set({ activeSession: next });
+    persistActiveSession(next);
   },
 
   finishSession: async () => {
@@ -121,10 +159,12 @@ startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
     const updated = [activeSession, ...sessions];
     set({ sessions: updated, activeSession: null });
     await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
+    await persistActiveSession(null);
   },
 
   discardSession: () => {
     set({ activeSession: null });
+    persistActiveSession(null);
   },
 
   deleteSession: async (id: string) => {
@@ -170,6 +210,8 @@ loadSchedule: async () => {
     if (data) set({ weeklySchedule: migrateSchedule(JSON.parse(data)) });
   } catch (e) {
     console.error('Failed to load schedule', e);
+  } finally {
+    set({ scheduleLoaded: true });
   }
 },
 
