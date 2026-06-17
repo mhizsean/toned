@@ -4,42 +4,22 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { useMemo, useState } from "react";
 import { formatDate } from "../constants/storage";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
+import DeleteIconButton from "../components/DeleteIconButton";
+import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
+import { formatSet } from "../utils/formatWorkout";
 
 export default function HistoryScreen() {
   const { sessions, deleteSession } = useWorkoutStore();
   const [expanded, setExpanded] = useState<string | null>(null);
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      "Delete Session",
-      "Are you sure you want to delete this session? This cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteSession(id);
-            if (expanded === id) setExpanded(null);
-          },
-        },
-      ],
-    );
-  };
 
   if (sessions.length === 0) {
     return (
@@ -85,29 +65,23 @@ export default function HistoryScreen() {
                   {topWeight > 0 ? (
                     <Text style={s.cardWeight}>top {topWeight}kg</Text>
                   ) : null}
-                  <TouchableOpacity
-                    style={s.deleteBtn}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      handleDelete(session.id);
+                  <DeleteIconButton
+                    stopPropagation
+                    title="Delete Session"
+                    message="Are you sure you want to delete this session? This cannot be undone."
+                    onDelete={() => {
+                      deleteSession(session.id);
+                      if (expanded === session.id) setExpanded(null);
                     }}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={16}
-                      color={colors.muted}
-                    />
-                  </TouchableOpacity>
+                  />
                 </View>
               </View>
 
-              <View style={s.tagRow}>
+              <ExerciseTagRow>
                 {session.exercises.map((ex, i) => (
-                  <View key={i} style={s.tag}>
-                    <Text style={s.tagText}>{ex.name}</Text>
-                  </View>
+                  <ExerciseTag key={i} name={ex.name} />
                 ))}
-              </View>
+              </ExerciseTagRow>
 
               {isOpen && (
                 <View style={s.breakdown}>
@@ -119,7 +93,7 @@ export default function HistoryScreen() {
                         <View key={si} style={s.setRow}>
                           <Text style={s.setNum}>#{si + 1}</Text>
                           <Text style={s.setInfo}>
-                            {set.weight}kg × {set.reps} reps
+                            {formatSet(set.weight, set.reps)} reps
                           </Text>
                         </View>
                       ))}
@@ -211,24 +185,6 @@ function createStyles(colors: ColorScheme) {
       fontSize: 12,
       color: colors.amber,
     },
-    tagRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 4,
-    },
-    tag: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 20,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    tagText: {
-      fontFamily: fonts.body,
-      fontSize: 10,
-      color: colors.muted,
-    },
     breakdown: {
       marginTop: 12,
     },
@@ -262,9 +218,6 @@ function createStyles(colors: ColorScheme) {
       fontFamily: fonts.mono,
       fontSize: 12,
       color: colors.text,
-    },
-    deleteBtn: {
-      padding: 2,
     },
   });
 }

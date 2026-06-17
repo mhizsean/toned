@@ -14,8 +14,12 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import ExercisePicker from "../components/ExercisePicker";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo } from "react";
+import ExerciseInfoButton from "../components/ExerciseInfoButton";
+import RemoveButton from "../components/RemoveButton";
 import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
-import { Ionicons } from "@expo/vector-icons";
+import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
+import { pluralize } from "../utils/text";
+import { formatSet, getTopWeight } from "../utils/formatWorkout";
 
 export default function SessionScreen() {
   const {
@@ -28,12 +32,12 @@ export default function SessionScreen() {
   } = useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
+  const { exerciseName, openInfo, closeInfo } = useExerciseInfoSheet();
   const [expandedEx, setExpandedEx] = useState<number | null>(null);
   const [inputs, setInputs] = useState<
     Record<number, { w: string; r: string }>
   >({});
   const [showPicker, setShowPicker] = useState(false);
-  const [infoExercise, setInfoExercise] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeSession) {
@@ -70,8 +74,7 @@ export default function SessionScreen() {
           <View>
             <Text style={s.title}>SESSION</Text>
             <Text style={s.sub}>
-              {activeSession.exercises.length} exercise
-              {activeSession.exercises.length !== 1 ? "s" : ""} logged
+              {pluralize(activeSession.exercises.length, "exercise")} logged
             </Text>
           </View>
           <TouchableOpacity onPress={handleDiscard}>
@@ -83,16 +86,13 @@ export default function SessionScreen() {
           {activeSession.exercises.map((ex, exIdx) => {
             const isOpen = expandedEx === exIdx;
             const inp = inputs[exIdx] || { w: "", r: "" };
-            const sessionMax = ex.sets.length
-              ? Math.max(...ex.sets.map((s) => s.weight))
-              : null;
+            const sessionMax = getTopWeight(ex.sets);
 
             return (
               <View
                 key={`${ex.name}-${exIdx}`}
                 style={[s.exCard, isOpen && s.exCardOpen]}
               >
-                {/* Card header */}
                 <View style={s.exCardHeader}>
                   <TouchableOpacity
                     style={s.exCardHeaderLeft}
@@ -101,21 +101,12 @@ export default function SessionScreen() {
                     <Text style={s.exName}>{ex.name}</Text>
                     <Text style={s.exMeta}>
                       {ex.sets.length > 0
-                        ? `${ex.sets.length} set${ex.sets.length > 1 ? "s" : ""} · top ${sessionMax}kg`
+                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax}kg`
                         : "No sets yet"}
                     </Text>
                   </TouchableOpacity>
                   <View style={s.exCardHeaderRight}>
-                    <TouchableOpacity
-                      onPress={() => setInfoExercise(ex.name)}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={18}
-                        color={colors.muted}
-                      />
-                    </TouchableOpacity>
+                    <ExerciseInfoButton onPress={() => openInfo(ex.name)} />
                     <TouchableOpacity
                       onPress={() => setExpandedEx(isOpen ? null : exIdx)}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -125,25 +116,21 @@ export default function SessionScreen() {
                   </View>
                 </View>
 
-                {/* Expanded body */}
                 {isOpen && (
                   <View style={s.exCardBody}>
-                    {/* Sets list */}
                     {ex.sets.map((set, sIdx) => (
                       <View key={sIdx} style={s.setRow}>
                         <Text style={s.setInfo}>
                           <Text style={s.setNum}>#{sIdx + 1} </Text>
-                          {set.weight}kg × {set.reps}
+                          {formatSet(set.weight, set.reps)}
                         </Text>
-                        <TouchableOpacity
+                        <RemoveButton
+                          size={16}
                           onPress={() => removeSet(exIdx, sIdx)}
-                        >
-                          <Text style={s.removeSet}>✕</Text>
-                        </TouchableOpacity>
+                        />
                       </View>
                     ))}
 
-                    {/* Add set inputs */}
                     <View style={s.inputRow}>
                       <TextInput
                         style={s.input}
@@ -208,10 +195,7 @@ export default function SessionScreen() {
           addedExercises={activeSession.exercises.map((ex) => ex.name)}
         />
 
-        <ExerciseInfoSheet
-          exerciseName={infoExercise}
-          onClose={() => setInfoExercise(null)}
-        />
+        <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -310,10 +294,6 @@ function createStyles(colors: ColorScheme) {
     setNum: {
       color: colors.muted,
       fontSize: 10,
-    },
-    removeSet: {
-      color: colors.muted,
-      fontSize: 16,
     },
     inputRow: {
       flexDirection: "row",

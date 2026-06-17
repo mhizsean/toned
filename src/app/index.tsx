@@ -13,9 +13,11 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo, useState } from "react";
-import { DAYS, TODAY } from "../constants/planning";
+import { TODAY } from "../constants/planning";
 import { WorkoutSet } from "../types";
-import { Modal } from "react-native";
+import TodayPlanSheet from "../components/TodayPlanSheet";
+import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
+import { pluralize } from "../utils/text";
 
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
@@ -44,6 +46,7 @@ export default function HomeScreen() {
   };
 
   const handleStartWithPlan = () => {
+    if (!todayPlan) return;
     const exercises = todayPlan.exercises.map((ex) => ({
       name: ex.name,
       sets: [] as WorkoutSet[],
@@ -88,8 +91,7 @@ export default function HomeScreen() {
               <View>
                 <Text style={s.activeBannerTitle}>SESSION IN PROGRESS</Text>
                 <Text style={s.activeBannerSub}>
-                  {activeSession.exercises.length} exercise
-                  {activeSession.exercises.length !== 1 ? "s" : ""} logged
+                  {`${pluralize(activeSession.exercises.length, "exercise")} logged`}
                 </Text>
               </View>
               <TouchableOpacity
@@ -131,74 +133,28 @@ export default function HomeScreen() {
                     </Text>
 
                     <Text style={s.sessionVol}>
-                      {session.exercises.length} exercise
-                      {session.exercises.length !== 1 ? "s" : ""}
+                      {pluralize(session.exercises.length, "exercise")}
                     </Text>
                   </View>
-                  <View style={s.tagRow}>
+                  <ExerciseTagRow>
                     {session.exercises.map((exercise, i) => (
-                      <View style={s.tag} key={i}>
-                        <Text style={s.tagText}>{exercise.name}</Text>
-                      </View>
+                      <ExerciseTag key={i} name={exercise.name} />
                     ))}
-                  </View>
+                  </ExerciseTagRow>
                 </View>
               ))}
             </View>
           )}
         </ScrollView>
 
-        {/* Today's plan prompt */}
-        <Modal
+        <TodayPlanSheet
           visible={showTodayPrompt}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowTodayPrompt(false)}
-        >
-          <TouchableOpacity
-            style={s.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowTodayPrompt(false)}
-          >
-            <TouchableOpacity
-              style={s.modalSheet}
-              activeOpacity={1}
-              onPress={() => {}}
-            >
-              <View style={s.modalHandle} />
-
-              <Text style={s.modalTitle}>TODAY'S PLAN</Text>
-              <Text style={s.modalFocus}>{todayPlan?.focus}</Text>
-
-              <View style={s.modalExList}>
-                {todayPlan?.exercises.map((ex, i) => (
-                  <View key={i} style={s.modalExRow}>
-                    <Text style={s.modalExNum}>
-                      {String(i + 1).padStart(2, "0")}
-                    </Text>
-                    <Text style={s.modalExName}>{ex.name}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={s.modalPrimaryBtn}
-                onPress={handleStartWithPlan}
-              >
-                <Text style={s.modalPrimaryBtnText}>
-                  START WITH TODAY'S PLAN
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={s.modalSecondaryBtn}
-                onPress={handleStartBlank}
-              >
-                <Text style={s.modalSecondaryBtnText}>START BLANK SESSION</Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
+          focus={todayPlan?.focus}
+          exercises={todayPlan?.exercises ?? []}
+          onClose={() => setShowTodayPrompt(false)}
+          onStartWithPlan={handleStartWithPlan}
+          onStartBlank={handleStartBlank}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -303,24 +259,6 @@ function createStyles(colors: ColorScheme) {
       fontSize: 11,
       color: colors.amber,
     },
-    tagRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 4,
-    },
-    tag: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 20,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-    },
-    tagText: {
-      fontFamily: fonts.body,
-      fontSize: 10,
-      color: colors.muted,
-    },
     activeBanner: {
       backgroundColor: colors.activeBanner,
       borderWidth: 1,
@@ -368,91 +306,6 @@ function createStyles(colors: ColorScheme) {
       fontFamily: fonts.body,
       fontSize: 12,
       color: colors.muted,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: "#000000cc",
-      justifyContent: "flex-end",
-    },
-    modalSheet: {
-      backgroundColor: colors.surface,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 24,
-      paddingBottom: 40,
-    },
-    modalHandle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.border,
-      borderRadius: 2,
-      alignSelf: "center",
-      marginBottom: 20,
-    },
-    modalTitle: {
-      fontFamily: fonts.display,
-      fontSize: 14,
-      color: colors.muted,
-      letterSpacing: 2,
-      marginBottom: 4,
-    },
-    modalFocus: {
-      fontFamily: fonts.display,
-      fontSize: 28,
-      color: colors.text,
-      letterSpacing: 1,
-      marginBottom: 20,
-    },
-    modalExList: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 10,
-      padding: 14,
-      marginBottom: 20,
-      gap: 10,
-    },
-    modalExRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    modalExNum: {
-      fontFamily: fonts.mono,
-      fontSize: 11,
-      color: colors.muted,
-      minWidth: 24,
-    },
-    modalExName: {
-      fontFamily: fonts.body,
-      fontSize: 14,
-      color: colors.text,
-    },
-    modalPrimaryBtn: {
-      backgroundColor: colors.amber,
-      borderRadius: 8,
-      padding: 16,
-      alignItems: "center",
-      marginBottom: 10,
-    },
-    modalPrimaryBtnText: {
-      fontFamily: fonts.display,
-      fontSize: 18,
-      color: colors.background,
-      letterSpacing: 1,
-    },
-    modalSecondaryBtn: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      padding: 14,
-      alignItems: "center",
-    },
-    modalSecondaryBtnText: {
-      fontFamily: fonts.display,
-      fontSize: 16,
-      color: colors.muted,
-      letterSpacing: 1,
     },
   });
 }

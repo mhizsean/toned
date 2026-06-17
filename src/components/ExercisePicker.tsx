@@ -5,12 +5,13 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Modal,
 } from "react-native";
 import { useMemo, useState } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { EXERCISE_CATEGORIES } from "../data/plans";
 import { useTheme } from "../context/ThemeContext";
+import BottomSheet from "./BottomSheet";
+import { filterCategoriesBySearch } from "../utils/exerciseCatalogue";
 
 type Props = {
   visible: boolean;
@@ -29,16 +30,7 @@ export default function ExercisePicker({
   const s = useMemo(() => createStyles(colors), [colors]);
   const [search, setSearch] = useState("");
 
-  const filteredCats = search
-    ? Object.fromEntries(
-        Object.entries(EXERCISE_CATEGORIES)
-          .map(([cat, exs]) => [
-            cat,
-            exs.filter((e) => e.toLowerCase().includes(search.toLowerCase())),
-          ])
-          .filter(([, exs]) => (exs as string[]).length > 0),
-      )
-    : EXERCISE_CATEGORIES;
+  const filteredCats = filterCategoriesBySearch(EXERCISE_CATEGORIES, search);
 
   const handleSelect = (name: string) => {
     onSelect(name);
@@ -47,80 +39,48 @@ export default function ExercisePicker({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity style={s.sheet} activeOpacity={1} onPress={() => {}}>
-          <View style={s.handle} />
+    <BottomSheet visible={visible} onClose={onClose} maxHeight="75%">
+      <Text style={s.title}>CHOOSE EXERCISE</Text>
 
-          <Text style={s.title}>CHOOSE EXERCISE</Text>
+      <TextInput
+        style={s.search}
+        placeholder="Search exercises..."
+        placeholderTextColor={colors.muted}
+        value={search}
+        onChangeText={setSearch}
+        autoFocus
+      />
 
-          <TextInput
-            style={s.search}
-            placeholder="Search exercises..."
-            placeholderTextColor={colors.muted}
-            value={search}
-            onChangeText={setSearch}
-            autoFocus
-          />
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {Object.entries(filteredCats).map(([cat, exs]) => (
-              <View key={cat} style={s.category}>
-                <Text style={s.catLabel}>{cat}</Text>
-                <View style={s.pillRow}>
-                  {(exs as string[]).map((ex) => {
-                    const added = addedExercises.includes(ex);
-                    return (
-                      <TouchableOpacity
-                        key={ex}
-                        style={[s.pill, added && s.pillAdded]}
-                        onPress={() => !added && handleSelect(ex)}
-                      >
-                        <Text style={[s.pillText, added && s.pillTextAdded]}>
-                          {added ? "✓ " : ""}
-                          {ex}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {Object.entries(filteredCats).map(([cat, exs]) => (
+          <View key={cat} style={s.category}>
+            <Text style={s.catLabel}>{cat}</Text>
+            <View style={s.pillRow}>
+              {exs.map((ex) => {
+                const added = addedExercises.includes(ex);
+                return (
+                  <TouchableOpacity
+                    key={ex}
+                    style={[s.pill, added && s.pillAdded]}
+                    onPress={() => !added && handleSelect(ex)}
+                  >
+                    <Text style={[s.pillText, added && s.pillTextAdded]}>
+                      {added ? "✓ " : ""}
+                      {ex}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </BottomSheet>
   );
 }
 
 function createStyles(colors: ColorScheme) {
   return StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: colors.bgOverlay,
-      justifyContent: "flex-end",
-    },
-    sheet: {
-      backgroundColor: colors.surface,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 20,
-      paddingBottom: 40,
-      maxHeight: "75%",
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.border,
-      borderRadius: 2,
-      alignSelf: "center",
-      marginBottom: 16,
-    },
     title: {
       fontFamily: fonts.display,
       fontSize: 22,

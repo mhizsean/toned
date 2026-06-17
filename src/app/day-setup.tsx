@@ -2,9 +2,9 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   TextInput,
+  ScrollView,
   Alert,
 } from "react-native";
 import { useState, useEffect, useMemo } from "react";
@@ -15,8 +15,12 @@ import { DayType, PlannedScheduleExercise } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
+import ExerciseInfoButton from "../components/ExerciseInfoButton";
+import RemoveButton from "../components/RemoveButton";
 import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
-import { Ionicons } from "@expo/vector-icons";
+import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
+import { stripEmoji } from "../utils/text";
+import { confirmDestructive } from "../utils/alerts";
 
 const DAY_TYPES: { label: string; value: DayType }[] = [
   { label: "🏋🏽 Gym", value: "gym" },
@@ -38,6 +42,7 @@ export default function DaySetupScreen() {
   const { day } = useLocalSearchParams<{ day: string }>();
   const { libraryExercises, weeklySchedule, saveDaySchedule } =
     useWorkoutStore();
+  const { exerciseName, openInfo, closeInfo } = useExerciseInfoSheet();
 
   const existing = weeklySchedule[day];
 
@@ -57,9 +62,8 @@ export default function DaySetupScreen() {
   const [originalExercises, setOriginalExercises] = useState<
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
-  const [infoExercise, setInfoExercise] = useState<string | null>(null);
 
-  const focusCategory = focus.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim();
+  const focusCategory = stripEmoji(focus);
 
   const filteredExercises = EXERCISE_CATALOGUE.filter(
     (ex) => ex.category === focusCategory && libraryExercises.includes(ex.name),
@@ -91,20 +95,6 @@ export default function DaySetupScreen() {
     setShowExPicker(false);
   };
 
-  const updateExercise = (
-    index: number,
-    field: "sets" | "reps",
-    value: string,
-  ) => {
-    setExercises((prev) =>
-      prev.map((ex, i) =>
-        i !== index
-          ? ex
-          : { ...ex, [field]: field === "sets" ? parseInt(value) || 0 : value },
-      ),
-    );
-  };
-
   const removeExercise = (index: number) => {
     setExercises((prev) => prev.filter((_, i) => i !== index));
   };
@@ -128,18 +118,13 @@ export default function DaySetupScreen() {
 
   const handleBack = () => {
     if (isEditing && hasChanges) {
-      Alert.alert(
-        "Unsaved Changes",
-        "You have unsaved changes. Are you sure you want to go back?",
-        [
-          { text: "Stay", style: "cancel" },
-          {
-            text: "Discard",
-            style: "destructive",
-            onPress: () => router.navigate("/plan"),
-          },
-        ],
-      );
+      confirmDestructive({
+        title: "Unsaved Changes",
+        message: "You have unsaved changes. Are you sure you want to go back?",
+        confirmLabel: "Discard",
+        cancelLabel: "Stay",
+        onConfirm: () => router.navigate("/plan"),
+      });
     } else {
       router.navigate("/plan");
     }
@@ -251,20 +236,9 @@ export default function DaySetupScreen() {
                   <View style={s.exCardTop}>
                     <Text style={s.exName}>{ex.name}</Text>
                     <View style={s.exCardTopRight}>
-                      <TouchableOpacity
-                        onPress={() => setInfoExercise(ex.name)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <Ionicons
-                          name="information-circle-outline"
-                          size={18}
-                          color={colors.muted}
-                        />
-                      </TouchableOpacity>
+                      <ExerciseInfoButton onPress={() => openInfo(ex.name)} />
                       {isEditing && (
-                        <TouchableOpacity onPress={() => removeExercise(i)}>
-                          <Text style={s.exRemove}>✕</Text>
-                        </TouchableOpacity>
+                        <RemoveButton onPress={() => removeExercise(i)} />
                       )}
                     </View>
                   </View>
@@ -328,10 +302,7 @@ export default function DaySetupScreen() {
           )}
         </ScrollView>
 
-        <ExerciseInfoSheet
-          exerciseName={infoExercise}
-          onClose={() => setInfoExercise(null)}
-        />
+        <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -493,11 +464,6 @@ function createStyles(colors: ColorScheme) {
       fontSize: 14,
       color: colors.text,
       flex: 1,
-    },
-    exRemove: {
-      color: colors.muted,
-      fontSize: 14,
-      marginLeft: 8,
     },
     addExBtn: {
       borderWidth: 1,

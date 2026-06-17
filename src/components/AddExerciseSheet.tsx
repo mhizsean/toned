@@ -5,13 +5,17 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Modal,
 } from "react-native";
 import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { useMemo, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
+import BottomSheet from "./BottomSheet";
+import {
+  groupCatalogueByCategory,
+  filterCategoriesBySearch,
+} from "../utils/exerciseCatalogue";
 
 type Props = {
   visible: boolean;
@@ -25,25 +29,8 @@ export default function AddExerciseSheet({ visible, onClose }: Props) {
     useWorkoutStore();
   const [search, setSearch] = useState("");
 
-  const groupedByCategory = EXERCISE_CATALOGUE.reduce(
-    (acc, ex) => {
-      if (!acc[ex.category]) acc[ex.category] = [];
-      acc[ex.category].push(ex.name);
-      return acc;
-    },
-    {} as Record<string, string[]>,
-  );
-
-  const filteredCats = search
-    ? Object.fromEntries(
-        Object.entries(groupedByCategory)
-          .map(([cat, exs]) => [
-            cat,
-            exs.filter((e) => e.toLowerCase().includes(search.toLowerCase())),
-          ])
-          .filter(([, exs]) => (exs as string[]).length > 0),
-      )
-    : groupedByCategory;
+  const groupedByCategory = groupCatalogueByCategory(EXERCISE_CATALOGUE);
+  const filteredCats = filterCategoriesBySearch(groupedByCategory, search);
 
   const toggleExercise = (name: string) => {
     if (libraryExercises.includes(name)) {
@@ -54,85 +41,53 @@ export default function AddExerciseSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity style={s.sheet} activeOpacity={1} onPress={() => {}}>
-          <View style={s.handle} />
-
-          <View style={s.titleRow}>
-            <Text style={s.title}>ADD EXERCISES</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={s.done}>DONE</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TextInput
-            style={s.search}
-            placeholder="Search exercises..."
-            placeholderTextColor={colors.muted}
-            value={search}
-            onChangeText={setSearch}
-            autoFocus
-          />
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {Object.entries(filteredCats).map(([cat, exs]) => (
-              <View key={cat} style={s.category}>
-                <Text style={s.catLabel}>{cat}</Text>
-                <View style={s.pillRow}>
-                  {(exs as string[]).map((ex) => {
-                    const added = libraryExercises.includes(ex);
-                    return (
-                      <TouchableOpacity
-                        key={ex}
-                        style={[s.pill, added && s.pillAdded]}
-                        onPress={() => toggleExercise(ex)}
-                      >
-                        <Text style={[s.pillText, added && s.pillTextAdded]}>
-                          {added ? "✓ " : ""}
-                          {ex}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+    <BottomSheet visible={visible} onClose={onClose} maxHeight="80%">
+      <View style={s.titleRow}>
+        <Text style={s.title}>ADD EXERCISES</Text>
+        <TouchableOpacity onPress={onClose}>
+          <Text style={s.done}>DONE</Text>
         </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
+      </View>
+
+      <TextInput
+        style={s.search}
+        placeholder="Search exercises..."
+        placeholderTextColor={colors.muted}
+        value={search}
+        onChangeText={setSearch}
+        autoFocus
+      />
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {Object.entries(filteredCats).map(([cat, exs]) => (
+          <View key={cat} style={s.category}>
+            <Text style={s.catLabel}>{cat}</Text>
+            <View style={s.pillRow}>
+              {exs.map((ex) => {
+                const added = libraryExercises.includes(ex);
+                return (
+                  <TouchableOpacity
+                    key={ex}
+                    style={[s.pill, added && s.pillAdded]}
+                    onPress={() => toggleExercise(ex)}
+                  >
+                    <Text style={[s.pillText, added && s.pillTextAdded]}>
+                      {added ? "✓ " : ""}
+                      {ex}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </BottomSheet>
   );
 }
 
 function createStyles(colors: ColorScheme) {
   return StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: "#000000cc",
-      justifyContent: "flex-end",
-    },
-    sheet: {
-      backgroundColor: "#111111",
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 20,
-      paddingBottom: 40,
-      maxHeight: "80%",
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.border,
-      borderRadius: 2,
-      alignSelf: "center",
-      marginBottom: 16,
-    },
     titleRow: {
       flexDirection: "row",
       justifyContent: "space-between",
