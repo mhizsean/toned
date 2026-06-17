@@ -77,7 +77,7 @@ export default function DaySetupScreen() {
 
   const addExercise = (name: string) => {
     if (exercises.find((e) => e.name === name)) return;
-    setExercises((prev) => [...prev, { name, sets: 3, reps: "10-12" }]);
+    setExercises((prev) => [...prev, { name, sets: 0, reps: "" }]);
     setShowExPicker(false);
   };
 
