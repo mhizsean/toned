@@ -102,7 +102,6 @@ export default function HistoryScreen() {
                           <Text style={s.setNum}>#{si + 1}</Text>
                           <Text style={s.setInfo}>
                             {formatSet(set.weight, set.reps, repLabel)}
-                            {repLabel !== "seconds" ? " reps" : ""}
                           </Text>
                         </View>
                         );
