@@ -139,7 +139,7 @@ export default function SessionScreen() {
                 {isOpen && (
                   <View style={s.exCardBody}>
                     {ex.sets.map((set, sIdx) => (
-                      <View key={sIdx} style={s.setRow}>
+                      <View key={`${ex.name}-set-${sIdx}`} style={s.setRow}>
                         <Text style={s.setInfo}>
                           <Text style={s.setNum}>#{sIdx + 1} </Text>
                           {formatSet(set.weight, set.reps, repLabel)}

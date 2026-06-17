@@ -292,7 +292,7 @@ export default function DaySetupScreen() {
                 </View>
               )}
               {exercises.map((ex, i) => (
-                <View key={i} style={s.exCard}>
+                <View key={ex.name} style={s.exCard}>
                   <View style={s.exCardTop}>
                     <Text style={s.exName}>{ex.name}</Text>
                     <View style={s.exCardTopRight}>

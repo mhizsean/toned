@@ -88,8 +88,8 @@ export default function PlanScreen() {
                         {schedule.type !== "rest" &&
                           schedule.exercises.length > 0 && (
                             <View style={styles.exTagRow}>
-                              {schedule.exercises.slice(0, 3).map((ex, i) => (
-                                <View key={i} style={styles.exTag}>
+                              {schedule.exercises.slice(0, 3).map((ex) => (
+                                <View key={ex.name} style={styles.exTag}>
                                   <Text style={styles.exTagText}>
                                     {ex.name}
                                   </Text>
@@ -168,8 +168,8 @@ export default function PlanScreen() {
                     </TouchableOpacity>
                     {open && (
                       <View style={styles.catBody}>
-                        {exs.map((ex, i) => (
-                          <View key={i} style={styles.libExRow}>
+                        {exs.map((ex) => (
+                          <View key={ex} style={styles.libExRow}>
                             <Text style={styles.libExName}>{ex}</Text>
                           </View>
                         ))}

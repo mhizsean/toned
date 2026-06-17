@@ -136,8 +136,8 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <ExerciseTagRow>
-                  {session.exercises.map((exercise, i) => (
-                    <ExerciseTag key={i} name={exercise.name} />
+                  {session.exercises.map((exercise) => (
+                    <ExerciseTag key={exercise.name} name={exercise.name} />
                   ))}
                 </ExerciseTagRow>
               </View>

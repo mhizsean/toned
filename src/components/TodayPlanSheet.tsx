@@ -32,7 +32,7 @@ export default function TodayPlanSheet({
 
       <View style={s.exList}>
         {exercises.map((ex, i) => (
-          <View key={i} style={s.exRow}>
+          <View key={ex.name} style={s.exRow}>
             <Text style={s.exNum}>{String(i + 1).padStart(2, "0")}</Text>
             <Text style={s.exName}>{ex.name}</Text>
           </View>

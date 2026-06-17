@@ -78,21 +78,21 @@ export default function HistoryScreen() {
               </View>
 
               <ExerciseTagRow>
-                {session.exercises.map((ex, i) => (
-                  <ExerciseTag key={i} name={ex.name} />
+                {session.exercises.map((ex) => (
+                  <ExerciseTag key={ex.name} name={ex.name} />
                 ))}
               </ExerciseTagRow>
 
               {isOpen && (
                 <View style={s.breakdown}>
                   <View style={s.divider} />
-                  {session.exercises.map((ex, i) => (
-                    <View key={i} style={s.exSection}>
+                  {session.exercises.map((ex) => (
+                    <View key={ex.name} style={s.exSection}>
                       <Text style={s.exName}>{ex.name}</Text>
                       {ex.sets.map((set, si) => {
                         const repLabel = findExercise(ex.name)?.repLabel;
                         return (
-                        <View key={si} style={s.setRow}>
+                        <View key={`${ex.name}-set-${si}`} style={s.setRow}>
                           <Text style={s.setNum}>#{si + 1}</Text>
                           <Text style={s.setInfo}>
                             {formatSet(set.weight, set.reps, repLabel)}
