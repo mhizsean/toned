@@ -87,7 +87,7 @@ export default function DaySetupScreen() {
 
   const addExercise = (name: string) => {
     if (exercises.find((e) => e.name === name)) return;
-    setExercises((prev) => [...prev, { name, sets: 0, reps: "" }]);
+    setExercises((prev) => [...prev, { name }]);
     setShowExPicker(false);
   };
 
@@ -246,49 +246,26 @@ export default function DaySetupScreen() {
                   <Text style={s.exEmptyText}>No exercises added yet</Text>
                 </View>
               )}
-
               {exercises.map((ex, i) => (
                 <View key={i} style={s.exCard}>
                   <View style={s.exCardTop}>
                     <Text style={s.exName}>{ex.name}</Text>
-                    <TouchableOpacity
-                      onPress={() => setInfoExercise(ex.name)}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={18}
-                        color={colors.muted}
-                      />
-                    </TouchableOpacity>
-                    {isEditing && (
-                      <TouchableOpacity onPress={() => removeExercise(i)}>
-                        <Text style={s.exRemove}>✕</Text>
+                    <View style={s.exCardTopRight}>
+                      <TouchableOpacity
+                        onPress={() => setInfoExercise(ex.name)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Ionicons
+                          name="information-circle-outline"
+                          size={18}
+                          color={colors.muted}
+                        />
                       </TouchableOpacity>
-                    )}
-                  </View>
-                  <View style={s.exInputRow}>
-                    <View style={s.exInputWrap}>
-                      <Text style={s.exInputLabel}>SETS</Text>
-                      <TextInput
-                        style={[s.exInput, !isEditing && s.exInputDisabled]}
-                        value={String(ex.sets)}
-                        keyboardType="numeric"
-                        onChangeText={(v) => updateExercise(i, "sets", v)}
-                        placeholderTextColor={colors.muted}
-                        editable={isEditing}
-                      />
-                    </View>
-                    <View style={s.exInputWrap}>
-                      <Text style={s.exInputLabel}>REPS</Text>
-                      <TextInput
-                        style={[s.exInput, !isEditing && s.exInputDisabled]}
-                        value={ex.reps}
-                        onChangeText={(v) => updateExercise(i, "reps", v)}
-                        placeholderTextColor={colors.muted}
-                        placeholder="e.g. 10-12"
-                        editable={isEditing}
-                      />
+                      {isEditing && (
+                        <TouchableOpacity onPress={() => removeExercise(i)}>
+                          <Text style={s.exRemove}>✕</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -521,34 +498,6 @@ function createStyles(colors: ColorScheme) {
       color: colors.muted,
       fontSize: 14,
       marginLeft: 8,
-    },
-    exInputRow: {
-      flexDirection: "row",
-      gap: 12,
-    },
-    exInputWrap: {
-      flex: 1,
-    },
-    exInputLabel: {
-      fontFamily: fonts.body,
-      fontSize: 9,
-      color: colors.muted,
-      letterSpacing: 1,
-      marginBottom: 6,
-    },
-    exInput: {
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 6,
-      padding: 10,
-      fontFamily: fonts.mono,
-      fontSize: 14,
-      color: colors.text,
-      textAlign: "center",
-    },
-    exInputDisabled: {
-      opacity: 0.5,
     },
     addExBtn: {
       borderWidth: 1,

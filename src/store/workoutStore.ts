@@ -5,7 +5,7 @@ import { DaySchedule, Exercise, Session, WeeklySchedule, WorkoutSet } from '../t
 type WorkoutStore = {
   sessions: Session[];
   activeSession: Session | null;
-  startSession: (exercises?: Exercise[]) => void;
+startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => void;
   addExercise: (name: string) => void;
   addSet: (exIndex: number, set: WorkoutSet) => void;
   removeSet: (exIndex: number, setIndex: number) => void;
@@ -37,11 +37,13 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     }
   },
 
-startSession: (exercises: Exercise[] = []) => {
+startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
   const session: Session = {
     id: Date.now().toString(),
     date: new Date().toISOString(),
-    exercises: exercises.map(ex => ({ name: ex.name, sets: [] })),
+    exercises: exercises.length > 0
+      ? exercises
+      : [],
   };
   set({ activeSession: session });
 },

@@ -32,8 +32,6 @@ export type DayType = 'gym' | 'home' | 'rest';
 
 export type PlannedScheduleExercise = {
  name: string;
-  sets: number;
-  reps: string;
 }
 
 export type DaySchedule = {
