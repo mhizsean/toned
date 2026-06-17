@@ -10,35 +10,35 @@ It started as a personal workout app built around my own routine and has grown i
 
 - Dashboard with total sessions, workouts this week, and PR count
 - Start a new workout or resume an in-progress session
-- Quick view of recent sessions
+- Quick view of recent sessions (tap to open in History)
 
 ### Plan
 
 - **Weekly schedule**: Configure each day of the week (Mon–Sun) as gym, home, or rest
-- **Day setup**: Set a focus area (e.g. glutes & legs, upper body) and assign exercises with target sets and reps
-- **Exercise library**: Curate your own list of exercises from a built-in catalogue of 100+ movements, organised by category
+- **Day setup**: Pick one or more focus areas (e.g. Glutes & Legs + Core & Posture) and assign exercises by name — no target sets/reps at planning time
+- **Exercise library**: Curate your own list of exercises from a built-in catalogue of 100+ movements, organised by category, with tag filters
 
 ### Sessions
 
-- Log exercises and record weight and reps for each set
+- Log exercises and record weight and reps (or seconds for timed holds) for each set
 - Add or remove sets during a workout
 - Pick exercises from your personal library
 - View exercise form guides (muscles worked, steps, tips, and common mistakes) from the catalogue
-- Finish or discard a session
+- Finish or discard a session; in-progress sessions are saved automatically if the app closes
 
 ### History & records
 
 - **History**: Browse past sessions with expandable set-by-set breakdowns; delete sessions you no longer need
-- **PRs**: See your heaviest lift per exercise, sorted by weight, with the date each record was set
+- **PRs**: Best set per exercise — heaviest weight, longest hold, or most reps for bodyweight moves — with the date each record was set
 
 ### Settings
 
 - Toggle between dark and light mode
-- App version and credits
+- App version (from `app.json`) and credits
 
 ### Data & offline
 
-- All data is stored locally on your device (sessions, schedule, library, and theme preference)
+- All data is stored locally on your device (sessions, active session, schedule, library, and theme preference)
 - No account or internet connection required to use the app
 
 ## Screens
@@ -139,6 +139,7 @@ Toned/
 | Key | Data |
 | --- | --- |
 | `toned_sessions` | Completed workout sessions |
+| `toned_active_session` | In-progress workout (restored on launch) |
 | `toned_schedule` | Weekly day-by-day plan |
 | `toned_library` | User's exercise library |
 | `toned_theme` | Dark or light mode preference |
