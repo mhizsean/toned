@@ -13,13 +13,14 @@ import { DayPlan } from "../types";
 import { DAYS, TODAY, TYPE_BADGE } from "../constants/planning";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
+import { router } from "expo-router";
 
 export default function PlanScreen() {
   const [tab, setTab] = useState<"schedule" | "library">("schedule");
   const [selectedDay, setSelectedDay] = useState<DayPlan["day"]>(TODAY);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const { libraryExercises } = useWorkoutStore();
+  const { libraryExercises, weeklySchedule } = useWorkoutStore();
 
   const dayPlan = weeklyPlan.find((d) => d.day === selectedDay)!;
   const badge = TYPE_BADGE[dayPlan.type];
@@ -61,96 +62,102 @@ export default function PlanScreen() {
 
         {/* schedule tab */}
         {tab === "schedule" && (
-          <>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.dayRow}
-            >
-              {DAYS.map((day) => {
-                const plan = weeklyPlan.find((plan) => plan.day === day)!;
-                const isSelected = day === selectedDay;
-                const isToday = day === TODAY;
+          <View>
+            {DAYS.map((day) => {
+              const schedule = weeklySchedule[day];
+              const isToday = day === TODAY;
 
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    onPress={() => setSelectedDay(day)}
-                    style={[
-                      styles.dayPill,
-                      isSelected && styles.dayPillActive,
-                      plan.type === "rest" && styles.dayPillRest,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayPillText,
-                        isSelected && styles.dayPillTextActive,
-                      ]}
-                    >
-                      {day}
-                    </Text>
-                    {isToday && (
+              return (
+                <TouchableOpacity
+                  key={day}
+                  style={[styles.dayCard, isToday && styles.dayCardToday]}
+                  onPress={() =>
+                    router.push({ pathname: "/day-setup", params: { day } })
+                  }
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.dayCardLeft}>
+                    <View style={styles.dayLabelRow}>
+                      <Text
+                        style={[styles.dayName, isToday && styles.dayNameToday]}
+                      >
+                        {day}
+                      </Text>
+                      {isToday && (
+                        <View style={styles.todayBadge}>
+                          <Text style={styles.todayBadgeText}>TODAY</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {schedule ? (
+                      <>
+                        <Text style={styles.dayFocus}>{schedule.focus}</Text>
+                        {schedule.type !== "rest" &&
+                          schedule.exercises.length > 0 && (
+                            <View style={styles.exTagRow}>
+                              {schedule.exercises.slice(0, 3).map((ex, i) => (
+                                <View key={i} style={styles.exTag}>
+                                  <Text style={styles.exTagText}>
+                                    {ex.name}
+                                  </Text>
+                                </View>
+                              ))}
+                              {schedule.exercises.length > 3 && (
+                                <View style={styles.exTag}>
+                                  <Text style={styles.exTagText}>
+                                    +{schedule.exercises.length - 3} more
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          )}
+                      </>
+                    ) : (
+                      <Text style={styles.dayEmpty}>
+                        Tap to set up this day
+                      </Text>
+                    )}
+                  </View>
+
+                  <View style={styles.dayCardRight}>
+                    {schedule && (
                       <View
                         style={[
-                          styles.todayDot,
-                          isSelected && styles.todayDotActive,
+                          styles.typeBadge,
+                          {
+                            borderColor:
+                              schedule.type === "rest"
+                                ? colors.muted + "44"
+                                : colors.amber + "44",
+                          },
                         ]}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            <View style={styles.dayCard}>
-              <View style={styles.dayCardTop}>
-                <View>
-                  <Text style={styles.dayName}>{selectedDay}</Text>
-                  <Text style={styles.dayFocus}>{dayPlan.focus}</Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.badge,
-                    { backgroundColor: badge.color + "44" },
-                  ]}
-                >
-                  <Text style={[styles.badgeText, { color: badge.color }]}>
-                    {badge.label}
-                  </Text>
-                </View>
-              </View>
-
-              {dayPlan.type === "rest" ? (
-                <Text style={styles.restText}>
-                  Take time to rest and recover!
-                </Text>
-              ) : (
-                <View style={styles.exList}>
-                  {dayPlan.exercises.map((ex, i) => (
-                    <View key={i} style={styles.exRow}>
-                      <View style={styles.exLeft}>
-                        <Text style={styles.exNum}>
-                          {String(i + 1).padStart(2, "0")}
+                      >
+                        <Text
+                          style={[
+                            styles.typeBadgeText,
+                            {
+                              color:
+                                schedule.type === "rest"
+                                  ? colors.muted
+                                  : colors.amber,
+                            },
+                          ]}
+                        >
+                          {schedule.type === "gym"
+                            ? "🏋🏽 Gym"
+                            : schedule.type === "home"
+                              ? "🏠 Home"
+                              : "😴 Rest"}
                         </Text>
-                        <View>
-                          <Text style={styles.exName}>{ex.name}</Text>
-
-                          {ex.note && (
-                            <Text style={styles.exNote}>{ex.note}</Text>
-                          )}
-                        </View>
                       </View>
-                      <Text style={styles.exSets}>
-                        {ex.sets} sets x {ex.reps} reps
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          </>
+                    )}
+                    <Text style={styles.dayChevron}>›</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         )}
 
         {/* library tab */}
@@ -306,32 +313,6 @@ const styles = StyleSheet.create({
   todayDotActive: {
     backgroundColor: colors.background,
   },
-  dayCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 18,
-  },
-  dayCardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 18,
-  },
-  dayName: {
-    fontFamily: fonts.display,
-    fontSize: 36,
-    color: colors.text,
-    letterSpacing: 2,
-    lineHeight: 38,
-  },
-  dayFocus: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.muted,
-    marginTop: 3,
-  },
   badge: {
     borderWidth: 1,
     borderRadius: 6,
@@ -459,5 +440,96 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.amber,
     letterSpacing: 1,
+  },
+  dayCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dayCardToday: {
+    borderColor: colors.amber + "55",
+  },
+  dayCardLeft: {
+    flex: 1,
+  },
+  dayLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  dayName: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.text,
+    letterSpacing: 1,
+  },
+  dayNameToday: {
+    color: colors.amber,
+  },
+  todayBadge: {
+    backgroundColor: colors.amber + "22",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  todayBadgeText: {
+    fontFamily: fonts.body,
+    fontSize: 9,
+    color: colors.amber,
+    letterSpacing: 1,
+  },
+  dayFocus: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.muted,
+    marginBottom: 6,
+  },
+  dayEmpty: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.muted,
+  },
+  exTagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  exTag: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  exTagText: {
+    fontFamily: fonts.body,
+    fontSize: 9,
+    color: colors.muted,
+  },
+  dayCardRight: {
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  typeBadge: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  typeBadgeText: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+  },
+  dayChevron: {
+    color: colors.muted,
+    fontSize: 20,
   },
 });
