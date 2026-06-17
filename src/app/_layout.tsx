@@ -22,6 +22,7 @@ function AppLayout() {
   });
   const { colors } = useTheme();
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
+  const loadActiveSession = useWorkoutStore((state) => state.loadActiveSession);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
   const loadSchedule = useWorkoutStore((state) => state.loadSchedule);
 
@@ -29,6 +30,7 @@ function AppLayout() {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
       loadSessions();
+      loadActiveSession();
       loadLibrary();
       loadSchedule();
     }
