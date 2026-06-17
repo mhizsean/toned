@@ -15,6 +15,8 @@ import { DayType, PlannedScheduleExercise } from "../types";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
+import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
+import { Ionicons } from "@expo/vector-icons";
 
 const DAY_TYPES: { label: string; value: DayType }[] = [
   { label: "🏋🏽 Gym", value: "gym" },
@@ -55,8 +57,8 @@ export default function DaySetupScreen() {
   const [originalExercises, setOriginalExercises] = useState<
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
+  const [infoExercise, setInfoExercise] = useState<string | null>(null);
 
-  // strip emoji from focus to match catalogue category
   const focusCategory = focus.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim();
 
   const filteredExercises = EXERCISE_CATALOGUE.filter(
@@ -171,7 +173,6 @@ export default function DaySetupScreen() {
         </View>
 
         <ScrollView contentContainerStyle={s.scroll}>
-          {/* Day type */}
           <Text style={s.sectionLabel}>DAY TYPE</Text>
           <View style={s.typeRow}>
             {DAY_TYPES.map((t) => (
@@ -195,7 +196,6 @@ export default function DaySetupScreen() {
 
           {!isRest && (
             <>
-              {/* Focus */}
               <Text style={s.sectionLabel}>FOCUS</Text>
               <TouchableOpacity
                 style={s.focusBtn}
@@ -239,7 +239,6 @@ export default function DaySetupScreen() {
                 </View>
               )}
 
-              {/* Exercises */}
               <Text style={s.sectionLabel}>EXERCISES</Text>
 
               {exercises.length === 0 && (
@@ -252,6 +251,16 @@ export default function DaySetupScreen() {
                 <View key={i} style={s.exCard}>
                   <View style={s.exCardTop}>
                     <Text style={s.exName}>{ex.name}</Text>
+                    <TouchableOpacity
+                      onPress={() => setInfoExercise(ex.name)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons
+                        name="information-circle-outline"
+                        size={18}
+                        color={colors.muted}
+                      />
+                    </TouchableOpacity>
                     {isEditing && (
                       <TouchableOpacity onPress={() => removeExercise(i)}>
                         <Text style={s.exRemove}>✕</Text>
@@ -341,6 +350,11 @@ export default function DaySetupScreen() {
             </View>
           )}
         </ScrollView>
+
+        <ExerciseInfoSheet
+          exerciseName={infoExercise}
+          onClose={() => setInfoExercise(null)}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -506,6 +520,7 @@ function createStyles(colors: ColorScheme) {
     exRemove: {
       color: colors.muted,
       fontSize: 14,
+      marginLeft: 8,
     },
     exInputRow: {
       flexDirection: "row",
@@ -607,6 +622,11 @@ function createStyles(colors: ColorScheme) {
       color: colors.muted,
       textAlign: "center",
       lineHeight: 20,
+    },
+    exCardTopRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
     },
   });
 }

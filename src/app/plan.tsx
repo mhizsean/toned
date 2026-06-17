@@ -8,7 +8,7 @@ import {
 import { useMemo, useState } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { EXERCISE_CATEGORIES } from "../data/plans";
+import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
 import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
@@ -24,11 +24,11 @@ export default function PlanScreen() {
   const { libraryExercises, weeklySchedule } = useWorkoutStore();
   const typeBadge = getTypeBadge(colors);
 
-  const libCategory = Object.entries(EXERCISE_CATEGORIES).reduce(
-    (acc, [cat, exs]) => {
-      const userExs = exs.filter((ex) => libraryExercises.includes(ex));
-      if (userExs.length > 0) {
-        acc[cat] = userExs;
+  const libByCategory = EXERCISE_CATALOGUE.reduce(
+    (acc, ex) => {
+      if (libraryExercises.includes(ex.name)) {
+        if (!acc[ex.category]) acc[ex.category] = [];
+        acc[ex.category].push(ex.name);
       }
       return acc;
     },
@@ -158,7 +158,7 @@ export default function PlanScreen() {
                 </Text>
               </View>
             ) : (
-              Object.entries(libCategory).map(([cat, exs]) => {
+              Object.entries(libByCategory).map(([cat, exs]) => {
                 const open = expandedCat === cat;
                 return (
                   <View key={cat} style={styles.catCard}>

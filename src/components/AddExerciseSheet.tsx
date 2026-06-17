@@ -10,8 +10,8 @@ import {
 import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { useMemo, useState } from "react";
-import { EXERCISE_CATEGORIES } from "../data/plans";
 import { useTheme } from "../context/ThemeContext";
+import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
 
 type Props = {
   visible: boolean;
@@ -25,16 +25,25 @@ export default function AddExerciseSheet({ visible, onClose }: Props) {
     useWorkoutStore();
   const [search, setSearch] = useState("");
 
+  const groupedByCategory = EXERCISE_CATALOGUE.reduce(
+    (acc, ex) => {
+      if (!acc[ex.category]) acc[ex.category] = [];
+      acc[ex.category].push(ex.name);
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+
   const filteredCats = search
     ? Object.fromEntries(
-        Object.entries(EXERCISE_CATEGORIES)
+        Object.entries(groupedByCategory)
           .map(([cat, exs]) => [
             cat,
             exs.filter((e) => e.toLowerCase().includes(search.toLowerCase())),
           ])
           .filter(([, exs]) => (exs as string[]).length > 0),
       )
-    : EXERCISE_CATEGORIES;
+    : groupedByCategory;
 
   const toggleExercise = (name: string) => {
     if (libraryExercises.includes(name)) {
@@ -169,7 +178,7 @@ function createStyles(colors: ColorScheme) {
       gap: 6,
     },
     pill: {
-      backgroundColor: "#1c1c1c",
+      backgroundColor: colors.pillBackground,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 20,
