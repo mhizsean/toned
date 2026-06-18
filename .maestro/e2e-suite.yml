@@ -1,0 +1,6 @@
+appId: com.mzsean.Toned
+---
+- runFlow: smoke.yml
+- runFlow: tab-navigation.yml
+- runFlow: plan-library.yml
+- runFlow: workout-log.yml

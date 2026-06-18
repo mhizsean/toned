@@ -1,0 +1,70 @@
+appId: com.mzsean.Toned
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "TONED"
+    timeout: 30000
+
+# Seed exercise library
+- tapOn:
+    id: "tab-plan"
+- tapOn: "LIBRARY"
+- scrollUntilVisible:
+    element: "+ ADD EXERCISES"
+- tapOn:
+    text: "+ ADD EXERCISES"
+    waitUntilVisible: true
+- tapOn:
+    text: "Search exercises..."
+    waitUntilVisible: true
+- inputText: "Hip Thrust"
+- scrollUntilVisible:
+    element: "Hip Thrust (Barbell)"
+- tapOn: "Hip Thrust (Barbell)"
+- tapOn: "DONE"
+
+# Start workout
+- tapOn:
+    id: "tab-home"
+- tapOn: ".*START WORKOUT.*"
+
+# Skip today's plan sheet if shown
+- runFlow:
+    when:
+      visible: "START BLANK SESSION"
+    commands:
+      - tapOn: "START BLANK SESSION"
+
+- assertVisible: "SESSION"
+- tapOn: "+ ADD EXERCISE"
+- assertVisible: "CHOOSE EXERCISE"
+- tapOn: "Hip Thrust (Barbell)"
+
+# Log one set
+- tapOn: "Hip Thrust (Barbell)"
+- tapOn: "kg"
+- inputText: "100"
+- tapOn: "reps"
+- inputText: "5"
+- hideKeyboard
+- tapOn: "+ SET"
+- assertVisible: "100kg"
+
+# Finish session
+- tapOn: "FINISH SESSION ✓"
+- tapOn: "Finish"
+
+# Verify history
+- tapOn:
+    id: "tab-history"
+- assertVisible: "1 SESSIONS LOGGED"
+- assertVisible: "Hip Thrust (Barbell)"
+
+# Verify PR
+- tapOn:
+    id: "tab-prs"
+- assertVisible: "RECORDS"
+- assertVisible: "1 LIFT TRACKED"
+- assertVisible: "Hip Thrust (Barbell)"
+- assertVisible: "100kg"

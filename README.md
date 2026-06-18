@@ -107,10 +107,88 @@ Hidden routes (no tab): `/session` (active workout), `/day-setup` (configure a d
    npm run web      # Web browser
    ```
 
+## Testing
+
+### Unit & component tests
+
+```bash
+npm test           # run all Jest tests
+npm run test:watch # watch mode
+```
+
+### E2E tests (Maestro, iOS Simulator)
+
+End-to-end tests use [Maestro](https://maestro.mobile.dev/) against a standalone simulator build (not Expo Go).
+
+1. **Install Maestro CLI** (one-time):
+
+   ```bash
+   curl -Ls "https://get.maestro.mobile.dev" | bash
+   brew install openjdk@17
+   ```
+
+   Maestro requires Java. The `npm run e2e` scripts set `JAVA_HOME` for Homebrew's OpenJDK 17.
+
+2. **Build and install on the iOS Simulator** (first run generates the `ios/` folder via prebuild):
+
+   ```bash
+   npx expo run:ios --device "iPhone 17 Pro"
+   ```
+
+   Use an **iOS 26.4+** simulator (not iOS 17.x). In Xcode → Settings → Components, install **iOS 26.5** Platform Support if the build says the SDK is missing.
+
+   For Debug builds the app loads JS from Metro — start the dev server in another terminal (`npm start`) before running Maestro, or build Release for a fully standalone app.
+
+3. **Run E2E flows** — use **separate terminal tabs**, one command each (do not paste `# comment` lines into the shell):
+
+   **Tab A** — Metro (leave running):
+
+   ```bash
+   npm start
+   ```
+
+   **Tab B** — build/install (once, or after native changes):
+
+   ```bash
+   npx expo run:ios --device "iPhone 17 Pro"
+   ```
+
+   **Tab C** — E2E:
+
+   ```bash
+   npm run e2e:smoke
+   npm run e2e
+   ```
+
+   Maestro installs to `~/.maestro/bin` (npm scripts use that path directly). After manual install, open a new terminal or run `export PATH="$PATH:$HOME/.maestro/bin"`.
+
+   If Metro says port 8081 is in use, stop the other process (`lsof -i :8081`) before starting again.
+
+**Flows:**
+
+| File | Coverage |
+| --- | --- |
+| `smoke.yml` | Fresh launch, home dashboard |
+| `tab-navigation.yml` | All five tabs and screen headers |
+| `plan-library.yml` | Add an exercise to the library |
+| `workout-log.yml` | Full workout: library → session → history → PRs |
+
+**Troubleshooting:**
+
+- **`maestro: command not found`**: Install with the curl command above, or run `npm run e2e:smoke` (scripts point at `~/.maestro/bin/maestro`).
+- **`iOS driver not ready in time`**: You do **not** need a `.env` file. `MAESTRO_DRIVER_STARTUP_TIMEOUT` is already set in `package.json` (5 minutes). Boot the **iPhone 17 Pro** simulator first, quit any stuck Maestro run, then retry. First run after a reboot can take 2–3 minutes before tests start.
+- **Metro Watchman / Operation not permitted**: The project disables Watchman via `metro.config.js`. Use `npm start` (sets `CI=1`). If Metro still crashes, move the repo off Desktop or grant Full Disk Access to Terminal in System Settings → Privacy.
+- If tests time out on the splash screen, wait for fonts to load — flows use a 30s `extendedWaitUntil` for `TONED`.
+- Each flow starts with `clearState: true` so AsyncStorage is wiped between runs.
+- **`iOS 26.5 is not installed`**: In Xcode → Settings → Components, download **iOS 26.5** under Platform Support (~8 GB). Your Xcode version needs this SDK to compile, even if you use an older simulator.
+- **Use a compatible simulator** after the platform SDK is installed: `npx expo run:ios --device "iPhone 17 Pro"` (iOS 26.4) instead of an iOS 17.x device.
+- **`expo-linking` / manifest error on simulator**: The embedded `app.config` was missing because `expo-constants` mishandles paths with spaces. Run `npm install` (applies `scripts/patch-expo-constants.sh`), then rebuild: `npx expo run:ios --device "iPhone 17 Pro"`.
+
 ## Project structure
 
 ```
 Toned/
+├── .maestro/             # Maestro E2E flows (iOS Simulator)
 ├── app.json              # Expo configuration
 ├── eas.json              # EAS Build profiles
 ├── assets/               # App icon, splash screen, favicon

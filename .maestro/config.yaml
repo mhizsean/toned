@@ -1,0 +1,8 @@
+appId: com.mzsean.Toned
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - smoke
+    - tab-navigation
+    - plan-library
+    - workout-log

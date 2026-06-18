@@ -1,0 +1,37 @@
+appId: com.mzsean.Toned
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "TONED"
+    timeout: 30000
+
+# Home
+- assertVisible: "SESSIONS"
+
+# Plan
+- tapOn:
+    id: "tab-plan"
+- assertVisible: "YOUR PLAN"
+- assertVisible: "SCHEDULE"
+
+# History
+- tapOn:
+    id: "tab-history"
+- assertVisible: "NO HISTORY"
+
+# PRs
+- tapOn:
+    id: "tab-prs"
+- assertVisible: "NO PRs YET"
+
+# Settings
+- tapOn:
+    id: "tab-settings"
+- assertVisible: "SETTINGS"
+- assertVisible: "Display Mode"
+
+# Back to Home
+- tapOn:
+    id: "tab-home"
+- assertVisible: "TONED"

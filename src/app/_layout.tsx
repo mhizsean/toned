@@ -62,6 +62,7 @@ function AppLayout() {
         name="index"
         options={{
           title: "HOME",
+          tabBarButtonTestID: "tab-home",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" color={color} size={size} />
           ),
@@ -71,6 +72,7 @@ function AppLayout() {
         name="plan"
         options={{
           title: "PLAN",
+          tabBarButtonTestID: "tab-plan",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -80,6 +82,7 @@ function AppLayout() {
         name="history"
         options={{
           title: "HISTORY",
+          tabBarButtonTestID: "tab-history",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time-outline" size={size} color={color} />
           ),
@@ -89,6 +92,7 @@ function AppLayout() {
         name="prs"
         options={{
           title: "PRs",
+          tabBarButtonTestID: "tab-prs",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trophy-outline" size={size} color={color} />
           ),
@@ -107,6 +111,7 @@ function AppLayout() {
         name="settings"
         options={{
           title: "SETTINGS",
+          tabBarButtonTestID: "tab-settings",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),

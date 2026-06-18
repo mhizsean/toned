@@ -1,0 +1,31 @@
+appId: com.mzsean.Toned
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "TONED"
+    timeout: 30000
+
+- tapOn:
+    id: "tab-plan"
+- assertVisible: "YOUR PLAN"
+
+- tapOn: "LIBRARY"
+- assertVisible: "NO EXERCISES YET"
+
+- scrollUntilVisible:
+    element: "+ ADD EXERCISES"
+- tapOn:
+    text: "+ ADD EXERCISES"
+    waitUntilVisible: true
+- tapOn:
+    text: "Search exercises..."
+    waitUntilVisible: true
+- inputText: "Hip Thrust"
+- scrollUntilVisible:
+    element: "Hip Thrust (Barbell)"
+- tapOn: "Hip Thrust (Barbell)"
+- tapOn: "DONE"
+
+- assertNotVisible: "NO EXERCISES YET"
+- assertVisible: "Upper Body"
