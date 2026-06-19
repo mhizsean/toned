@@ -19,6 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#080808"
       },
       "edgeToEdgeEnabled": true,
@@ -27,7 +28,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#080808",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 280
+        }
+      ]
     ],
     "extra": {
       "router": {},
