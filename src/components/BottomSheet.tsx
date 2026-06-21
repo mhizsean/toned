@@ -1,11 +1,11 @@
-import { ReactNode, useMemo } from "react";
 import {
   Modal,
+  Pressable,
   StyleSheet,
-  TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+import { ReactNode, useMemo } from "react";
 import { ColorScheme } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
 
@@ -34,20 +34,13 @@ export default function BottomSheet({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        style={s.overlay}
-        activeOpacity={1}
-        onPress={onClose}
-      >
-        <TouchableOpacity
-          style={[s.sheet, { maxHeight }, sheetStyle]}
-          activeOpacity={1}
-          onPress={() => {}}
-        >
+      <View style={s.overlay}>
+        <Pressable style={s.backdrop} onPress={onClose} />
+        <View style={[s.sheet, { maxHeight, height: maxHeight }, sheetStyle]}>
           <View style={s.handle} />
-          {children}
-        </TouchableOpacity>
-      </TouchableOpacity>
+          <View style={s.content}>{children}</View>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -59,12 +52,20 @@ function createStyles(colors: ColorScheme) {
       backgroundColor: colors.bgOverlay,
       justifyContent: "flex-end",
     },
+    backdrop: {
+      flex: 1,
+    },
     sheet: {
       backgroundColor: colors.surface,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
       paddingBottom: 40,
+    },
+    content: {
+      flex: 1,
+      minHeight: 0,
     },
     handle: {
       width: 40,

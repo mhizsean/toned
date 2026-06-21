@@ -165,12 +165,14 @@ describe("DaySetupScreen", () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
-  it("saves a configured gym day and returns to plan", () => {
+  it("saves a configured gym day and returns to plan", async () => {
     renderDaySetup();
 
     fireEvent.press(screen.getByText("Select focus areas..."));
     fireEvent.press(screen.getByText("💪 Upper Body"));
-    fireEvent.press(screen.getByText("SAVE"));
+    await act(async () => {
+      fireEvent.press(screen.getByText("SAVE"));
+    });
 
     expect(useWorkoutStore.getState().weeklySchedule.Wed).toEqual({
       type: "gym",

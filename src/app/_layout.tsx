@@ -10,7 +10,10 @@ import { fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,6 +24,8 @@ function AppLayout() {
     DMSans_500Medium,
   });
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const tabBarBottomInset = Math.max(insets.bottom, 8);
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
   const loadActiveSession = useWorkoutStore((state) => state.loadActiveSession);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
@@ -46,8 +51,9 @@ function AppLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 52 + tabBarBottomInset,
+          paddingTop: 8,
+          paddingBottom: tabBarBottomInset,
         },
         tabBarActiveTintColor: colors.amber,
         tabBarInactiveTintColor: colors.muted,

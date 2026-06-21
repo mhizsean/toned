@@ -54,6 +54,7 @@ export default function DaySetupScreen() {
     existing?.exercises || [],
   );
   const [showExPicker, setShowExPicker] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [originalType, setOriginalType] = useState<DayType>(
     existing?.type || "gym",
@@ -65,11 +66,24 @@ export default function DaySetupScreen() {
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
 
-  const filteredExercises = EXERCISE_CATALOGUE.filter(
-    (ex) => focuses.includes(ex.category) && libraryExercises.includes(ex.name),
+  const librarySet = useMemo(
+    () => new Set(libraryExercises),
+    [libraryExercises],
+  );
+  const filteredExercises = useMemo(
+    () =>
+      EXERCISE_CATALOGUE.filter(
+        (ex) => focuses.includes(ex.category) && librarySet.has(ex.name),
+      ),
+    [focuses, librarySet],
+  );
+  const addedExerciseNames = useMemo(
+    () => new Set(exercises.map((ex) => ex.name)),
+    [exercises],
   );
 
   useEffect(() => {
+    if (!scheduleLoaded) return;
     const e = weeklySchedule[day];
     setIsEditing(!e);
     setType(e?.type || "gym");
@@ -80,7 +94,7 @@ export default function DaySetupScreen() {
     setOriginalExercises(e?.exercises || []);
     setShowFocusPicker(false);
     setShowExPicker(false);
-  }, [day, weeklySchedule]);
+  }, [day, scheduleLoaded]);
 
   const hasChanges =
     type !== originalType ||
@@ -107,8 +121,8 @@ export default function DaySetupScreen() {
     setExercises((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
-    if (!scheduleLoaded) return;
+  const handleSave = async () => {
+    if (isSaving || !scheduleLoaded) return;
     if (!isRest && focuses.length === 0) {
       Alert.alert(
         "Missing Focus",
@@ -116,16 +130,29 @@ export default function DaySetupScreen() {
       );
       return;
     }
-    saveDaySchedule(day, {
-      type,
-      focuses: isRest ? [] : focuses,
-      exercises: isRest ? [] : exercises,
-    });
-    setOriginalType(type);
-    setOriginalFocuses(focuses);
-    setOriginalExercises(exercises);
-    setIsEditing(false);
-    router.navigate("/plan");
+
+    setIsSaving(true);
+    try {
+      await saveDaySchedule(day, {
+        type,
+        focuses: isRest ? [] : focuses,
+        exercises: isRest ? [] : exercises,
+      });
+      const saved = useWorkoutStore.getState().weeklySchedule[day];
+      setOriginalType(saved?.type ?? type);
+      setOriginalFocuses(getScheduleFocuses(saved));
+      setOriginalExercises(saved?.exercises ?? []);
+      setExercises(saved?.exercises ?? exercises);
+      setIsEditing(false);
+      router.navigate("/plan");
+    } catch {
+      Alert.alert(
+        "Save Failed",
+        "Could not save this day. Please try again.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleBack = () => {
@@ -163,12 +190,15 @@ export default function DaySetupScreen() {
           {isEditing ? (
             <TouchableOpacity
               onPress={handleSave}
-              disabled={!!existing && !hasChanges}
+              disabled={isSaving || (!!existing && !hasChanges)}
             >
               <Text
-                style={[s.save, !!existing && !hasChanges && s.saveDisabled]}
+                style={[
+                  s.save,
+                  (isSaving || (!!existing && !hasChanges)) && s.saveDisabled,
+                ]}
               >
-                SAVE
+                {isSaving ? "SAVING…" : "SAVE"}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -336,26 +366,36 @@ export default function DaySetupScreen() {
                           : "No library exercises match your selected focus areas. Add relevant exercises in the Library tab."}
                     </Text>
                   ) : (
-                    filteredExercises.map((ex) => {
-                      const added = exercises.find((e) => e.name === ex.name);
-                      return (
-                        <TouchableOpacity
-                          key={ex.name}
-                          style={[s.exPickerItem, added && s.exPickerItemAdded]}
-                          onPress={() => !added && addExercise(ex.name)}
-                        >
-                          <Text
+                    <ScrollView
+                      style={s.exPickerList}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {filteredExercises.map((ex) => {
+                        const added = addedExerciseNames.has(ex.name);
+                        return (
+                          <TouchableOpacity
+                            key={ex.name}
                             style={[
-                              s.exPickerItemText,
-                              added && s.exPickerItemTextAdded,
+                              s.exPickerItem,
+                              added && s.exPickerItemAdded,
                             ]}
+                            onPress={() => !added && addExercise(ex.name)}
                           >
-                            {added ? "✓ " : ""}
-                            {ex.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })
+                            <Text
+                              style={[
+                                s.exPickerItemText,
+                                added && s.exPickerItemTextAdded,
+                              ]}
+                            >
+                              {added ? "✓ " : ""}
+                              {ex.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
                   )}
                 </View>
               )}
@@ -619,6 +659,9 @@ function createStyles(colors: ColorScheme) {
       borderRadius: 8,
       marginTop: 8,
       overflow: "hidden",
+    },
+    exPickerList: {
+      maxHeight: 280,
     },
     exPickerEmpty: {
       fontFamily: fonts.body,

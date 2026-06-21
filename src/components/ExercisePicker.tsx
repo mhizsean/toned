@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  ScrollView,
 } from "react-native";
 import { useMemo, useState } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
@@ -14,6 +13,7 @@ import {
   filterCategoriesBySearch,
   getCatalogueGrouped,
 } from "../utils/exerciseCatalogue";
+import ExerciseCategoryList from "./ExerciseCategoryList";
 
 type Props = {
   visible: boolean;
@@ -44,7 +44,10 @@ export default function ExercisePicker({
     [exercisePool],
   );
 
-  const filteredCats = filterCategoriesBySearch(grouped, search);
+  const filteredCats = useMemo(
+    () => filterCategoriesBySearch(grouped, search),
+    [grouped, search],
+  );
   const isEmpty = Object.keys(filteredCats).length === 0;
 
   const handleSelect = (name: string) => {
@@ -55,57 +58,45 @@ export default function ExercisePicker({
 
   return (
     <BottomSheet visible={visible} onClose={onClose} maxHeight="75%">
-      <Text style={s.title}>CHOOSE EXERCISE</Text>
+      <View style={s.body}>
+        <Text style={s.title}>CHOOSE EXERCISE</Text>
 
-      <TextInput
-        style={s.search}
-        placeholder="Search exercises..."
-        placeholderTextColor={colors.muted}
-        value={search}
-        onChangeText={setSearch}
-        autoFocus
-      />
+        <TextInput
+          style={s.search}
+          placeholder="Search exercises..."
+          placeholderTextColor={colors.muted}
+          value={search}
+          onChangeText={setSearch}
+          autoFocus
+        />
 
-      {isEmpty ? (
-        <View style={s.empty}>
-          <Text style={s.emptyText}>
-            {exercisePool?.length === 0
-              ? "No exercises in your library yet. Add some in Plan → Library."
-              : "No exercises match your search."}
-          </Text>
-        </View>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {Object.entries(filteredCats).map(([cat, exs]) => (
-            <View key={cat} style={s.category}>
-              <Text style={s.catLabel}>{cat}</Text>
-              <View style={s.pillRow}>
-                {exs.map((ex) => {
-                  const added = addedExercises.includes(ex);
-                  return (
-                    <TouchableOpacity
-                      key={ex}
-                      style={[s.pill, added && s.pillAdded]}
-                      onPress={() => !added && handleSelect(ex)}
-                    >
-                      <Text style={[s.pillText, added && s.pillTextAdded]}>
-                        {added ? "✓ " : ""}
-                        {ex}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      )}
+        {isEmpty ? (
+          <View style={s.empty}>
+            <Text style={s.emptyText}>
+              {exercisePool?.length === 0
+                ? "No exercises in your library yet. Add some in Plan → Library."
+                : "No exercises match your search."}
+            </Text>
+          </View>
+        ) : (
+          <ExerciseCategoryList
+            categories={filteredCats}
+            addedNames={addedExercises}
+            onPress={handleSelect}
+            styles={s}
+          />
+        )}
+      </View>
     </BottomSheet>
   );
 }
 
 function createStyles(colors: ColorScheme) {
   return StyleSheet.create({
+    body: {
+      flex: 1,
+      minHeight: 0,
+    },
     title: {
       fontFamily: fonts.display,
       fontSize: 22,

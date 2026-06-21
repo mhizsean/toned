@@ -61,7 +61,7 @@ type WorkoutStore = {
   loadLibrary: () => void;
   weeklySchedule: WeeklySchedule;
   loadSchedule: () => void;
-  saveDaySchedule: (day: string, schedule: DaySchedule) => void;
+  saveDaySchedule: (day: string, schedule: DaySchedule) => Promise<void>;
 };
 
 async function persistActiveSession(session: Session | null) {
@@ -231,6 +231,11 @@ saveDaySchedule: async (day, schedule) => {
   };
   const updated = { ...weeklySchedule, [day]: normalized };
   set({ weeklySchedule: updated });
-  await AsyncStorage.setItem('toned_schedule', JSON.stringify(updated));
+  try {
+    await AsyncStorage.setItem('toned_schedule', JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to save schedule', e);
+    throw e;
+  }
 },
 }));
