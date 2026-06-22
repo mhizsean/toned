@@ -20,11 +20,12 @@ import {
 import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 
 export default function PlanScreen() {
   const { colors } = useTheme();
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [tab, setTab] = useState<"schedule" | "library">("schedule");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -49,6 +50,12 @@ export default function PlanScreen() {
   );
 
   const hasFilteredResults = Object.keys(libByCategory).length > 0;
+
+  useEffect(() => {
+    if (tabParam === "library") {
+      setTab("library");
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     if (libraryTag && !availableTags.includes(libraryTag)) {

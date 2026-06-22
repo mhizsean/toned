@@ -22,10 +22,11 @@ import { isTodayPlanComplete } from "../utils/todayWorkout";
 
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
-  const { sessions, activeSession, startSession, weeklySchedule } =
+  const { sessions, activeSession, startSession, weeklySchedule, libraryExercises } =
     useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
+  const hasLibrary = libraryExercises.length > 0;
   const weekCount = sessions.filter(
     (session) => new Date(session.date) > new Date(Date.now() - 7 * 86_400_000),
   ).length;
@@ -35,6 +36,7 @@ export default function HomeScreen() {
   const todayComplete = isTodayPlanComplete(todayPlan, sessions);
 
   const handleStartSession = () => {
+    if (!hasLibrary) return;
     if (
       todayPlan &&
       todayPlan.type !== "rest" &&
@@ -62,6 +64,10 @@ export default function HomeScreen() {
     startSession();
     setShowTodayPrompt(false);
     router.push("/session");
+  };
+
+  const openPlanLibrary = () => {
+    router.push({ pathname: "/plan", params: { tab: "library" } });
   };
 
   const openSessionHistory = (sessionId: string) => {
@@ -116,6 +122,26 @@ export default function HomeScreen() {
               You crushed it — rest up and come back tomorrow.
             </Text>
           </View>
+        ) : !hasLibrary ? (
+          <>
+            <View style={[s.startBtn, s.startBtnDisabled]}>
+              <Text style={[s.startBtnText, s.startBtnTextDisabled]}>
+                ＋ START WORKOUT
+              </Text>
+            </View>
+            <View style={s.setupBanner}>
+              <Text style={s.setupBannerTitle}>GET SET UP FIRST</Text>
+              <Text style={s.setupBannerText}>
+                Add exercises to your library, then set up your weekly plan
+                before starting a workout.
+              </Text>
+              <TouchableOpacity onPress={openPlanLibrary} activeOpacity={0.8}>
+                <Text style={s.setupBannerLink}>
+                  Go to Plan → Library to add exercises
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
         ) : (
           <TouchableOpacity style={s.startBtn} onPress={handleStartSession}>
             <Text style={s.startBtnText}>＋ START WORKOUT</Text>
@@ -245,6 +271,40 @@ function createStyles(colors: ColorScheme) {
       fontSize: 22,
       color: colors.background,
       letterSpacing: 2,
+    },
+    startBtnDisabled: {
+      backgroundColor: colors.border,
+    },
+    startBtnTextDisabled: {
+      color: colors.muted,
+    },
+    setupBanner: {
+      marginTop: 10,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 16,
+    },
+    setupBannerTitle: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.text,
+      letterSpacing: 1,
+      marginBottom: 8,
+    },
+    setupBannerText: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      lineHeight: 19,
+      marginBottom: 12,
+    },
+    setupBannerLink: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 13,
+      color: colors.amber,
+      lineHeight: 19,
     },
     doneBanner: {
       backgroundColor: colors.surface,

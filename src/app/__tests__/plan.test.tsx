@@ -16,6 +16,7 @@ jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
   },
+  useLocalSearchParams: jest.fn(() => ({})),
 }));
 
 jest.mock("../../constants/planning", () => {

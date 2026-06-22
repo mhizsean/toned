@@ -83,7 +83,7 @@ function resetStore() {
     sessions: [],
     activeSession: null,
     scheduleLoaded: false,
-    libraryExercises: [],
+    libraryExercises: ["Push-Up"],
     weeklySchedule: {},
   });
 }
@@ -110,6 +110,24 @@ describe("HomeScreen", () => {
     expect(screen.getByText("THIS WEEK")).toBeTruthy();
     expect(screen.getByText("PRs")).toBeTruthy();
     expect(screen.getAllByText("0")).toHaveLength(3);
+  });
+
+  it("shows a setup prompt when the library is empty", () => {
+    useWorkoutStore.setState({ libraryExercises: [] });
+
+    renderHome();
+
+    expect(screen.getByText("GET SET UP FIRST")).toBeTruthy();
+    expect(
+      screen.getByText("Go to Plan → Library to add exercises"),
+    ).toBeTruthy();
+    expect(screen.queryByText("＋ START WORKOUT")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Go to Plan → Library to add exercises"));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/plan",
+      params: { tab: "library" },
+    });
   });
 
   it("shows start workout when no active session and plan is incomplete", () => {
