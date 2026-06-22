@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts, BebasNeue_400Regular } from "@expo-google-fonts/bebas-neue";
 import {
@@ -25,7 +26,11 @@ function AppLayout() {
   });
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const tabBarBottomInset = Math.max(insets.bottom, 8);
+  const tabBarBottomInset = Math.max(insets.bottom, 12);
+  const tabBarHeight = 68;
+  const tabBarFloatGap = 12;
+  const sceneBottomInset =
+    tabBarHeight + tabBarBottomInset + tabBarFloatGap + 8;
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
   const loadActiveSession = useWorkoutStore((state) => state.loadActiveSession);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
@@ -47,20 +52,43 @@ function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: {
+          paddingBottom: sceneBottomInset,
+        },
         tabBarStyle: {
+          position: "absolute",
+          left: 16,
+          right: 16,
+          bottom: tabBarBottomInset,
+          height: tabBarHeight,
+          paddingTop: 10,
+          paddingBottom: 10,
           backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: 52 + tabBarBottomInset,
-          paddingTop: 8,
-          paddingBottom: tabBarBottomInset,
+          borderTopWidth: 0,
+          borderRadius: 28,
+          marginHorizontal: 14,
+          ...Platform.select({
+            ios: {
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.14,
+              shadowRadius: 12,
+            },
+            android: {
+              elevation: 10,
+            },
+          }),
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
         },
         tabBarActiveTintColor: colors.amber,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: {
           fontFamily: fonts.body,
-          fontSize: 10,
-          letterSpacing: 1,
+          fontSize: 9,
+          letterSpacing: 0.5,
+          marginTop: 2,
         },
       }}
     >
