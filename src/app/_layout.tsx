@@ -34,11 +34,13 @@ function AppLayout() {
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
   const loadActiveSession = useWorkoutStore((state) => state.loadActiveSession);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
+  const loadCustomExercises = useWorkoutStore((state) => state.loadCustomExercises);
   const loadSchedule = useWorkoutStore((state) => state.loadSchedule);
 
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
+      loadCustomExercises();
       loadSessions();
       loadActiveSession();
       loadLibrary();

@@ -261,12 +261,21 @@ export default function PlanScreen() {
                         {open && (
                           <View style={styles.catBody}>
                             {exs.map((ex) => {
-                              const tags = findExercise(ex)?.tags ?? [];
+                              const exercise = findExercise(ex);
+                              const tags = exercise?.tags ?? [];
+                              const isCustom = exercise?.isCustom;
                               return (
                                 <View key={ex} style={styles.libExRow}>
                                   <Text style={styles.libExName}>{ex}</Text>
-                                  {tags.length > 0 && (
+                                  {(isCustom || tags.length > 0) && (
                                     <View style={styles.libExTagRow}>
+                                      {isCustom && (
+                                        <View style={styles.libExTag}>
+                                          <Text style={styles.libExTagText}>
+                                            Custom
+                                          </Text>
+                                        </View>
+                                      )}
                                       {tags.map((tag) => (
                                         <View key={tag} style={styles.libExTag}>
                                           <Text style={styles.libExTagText}>

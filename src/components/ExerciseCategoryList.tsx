@@ -85,7 +85,7 @@ export default function ExerciseCategoryList({
       style={[listStyles.list, listStyle]}
       contentContainerStyle={listStyles.listContent}
       showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps="always"
       nestedScrollEnabled
     >
       {data.map(([category, exercises]) => (

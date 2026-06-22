@@ -16,6 +16,7 @@ export type ExerciseInfo = {
   steps: string[];
   tips: string[];
   mistakes: string[];
+  isCustom?: boolean;
 };
 
 export const EXERCISE_CATALOGUE: ExerciseInfo[] = [

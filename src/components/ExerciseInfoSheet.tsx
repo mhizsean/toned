@@ -24,6 +24,42 @@ export default function ExerciseInfoSheet({ exerciseName, onClose }: Props) {
 
   if (!exerciseName || !exercise) return null;
 
+  if (exercise.isCustom) {
+    return (
+      <BottomSheet visible onClose={onClose}>
+        <View style={s.header}>
+          <View style={s.headerLeft}>
+            <Text style={s.title}>{exercise.name}</Text>
+            <View style={s.tagRow}>
+              <View style={s.tag}>
+                <Text style={s.tagText}>{exercise.equipment}</Text>
+              </View>
+              <View style={s.tag}>
+                <Text style={s.tagText}>{exercise.category}</Text>
+              </View>
+              <View style={s.tag}>
+                <Text style={s.tagText}>{formatRepLabel(exercise.repLabel)}</Text>
+              </View>
+              <View style={s.tag}>
+                <Text style={s.tagText}>Custom</Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity onPress={onClose} style={s.closeBtn}>
+            <Text style={s.closeBtnText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={s.customCard}>
+          <Text style={s.customTitle}>YOUR CUSTOM EXERCISE</Text>
+          <Text style={s.customText}>
+            You added this exercise to your library. Form guides are only
+            available for built-in catalogue moves.
+          </Text>
+        </View>
+      </BottomSheet>
+    );
+  }
+
   return (
     <BottomSheet visible onClose={onClose}>
       <View style={s.header}>
@@ -232,6 +268,27 @@ function createStyles(colors: ColorScheme) {
     },
     bottomPad: {
       height: 20,
+    },
+    customCard: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      padding: 16,
+      marginTop: 8,
+    },
+    customTitle: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.amber,
+      letterSpacing: 1,
+      marginBottom: 8,
+    },
+    customText: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      lineHeight: 20,
     },
   });
 }

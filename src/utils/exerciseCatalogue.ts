@@ -10,6 +10,7 @@ import {
   RepLabel,
   ExerciseType,
 } from "../data/exerciseTypes";
+import type { CustomExercise } from "../types/customExercise";
 
 const CARDIO_EXERCISES = new Set([
   "Mountain Climber",
@@ -98,9 +99,92 @@ for (const [alias, canonical] of Object.entries(EXERCISE_ALIASES)) {
   if (exercise) exerciseByName.set(alias, exercise);
 }
 
+const customExerciseByName = new Map<string, ExerciseInfo>();
+
+export function customExerciseToInfo(custom: CustomExercise): ExerciseInfo {
+  return enrichExercise({
+    id: `custom-${slugifyExerciseName(custom.name)}`,
+    name: custom.name.trim(),
+    category: custom.category,
+    equipment: custom.equipment.trim() || "Custom",
+    repLabel: custom.repLabel,
+    muscles: [],
+    steps: [],
+    tips: [],
+    mistakes: [],
+    isCustom: true,
+  });
+}
+
+export function syncCustomExercises(customExercises: CustomExercise[]) {
+  customExerciseByName.clear();
+  for (const custom of customExercises) {
+    const info = customExerciseToInfo(custom);
+    customExerciseByName.set(info.name, info);
+  }
+}
+
+export function getCustomExercises(): ExerciseInfo[] {
+  return Array.from(customExerciseByName.values());
+}
+
+export function findBuiltInExercise(
+  name: string | null | undefined,
+): ExerciseInfo | undefined {
+  if (!name) return undefined;
+  return (
+    exerciseByName.get(name) ?? exerciseByName.get(resolveExerciseName(name))
+  );
+}
+
 export function findExercise(name: string | null | undefined): ExerciseInfo | undefined {
   if (!name) return undefined;
-  return exerciseByName.get(name) ?? exerciseByName.get(resolveExerciseName(name));
+  const resolved = resolveExerciseName(name);
+  return (
+    exerciseByName.get(name) ??
+    exerciseByName.get(resolved) ??
+    customExerciseByName.get(name) ??
+    customExerciseByName.get(resolved)
+  );
+}
+
+export function getMergedCatalogue(): ExerciseInfo[] {
+  return [...enrichedCatalogue, ...getCustomExercises()];
+}
+
+export function normalizeCustomExerciseName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+export function isDuplicateExerciseName(name: string): boolean {
+  const normalized = normalizeCustomExerciseName(name);
+  if (!normalized) return true;
+
+  const lower = normalized.toLowerCase();
+  for (const ex of enrichedCatalogue) {
+    if (ex.name.toLowerCase() === lower) return true;
+  }
+  for (const ex of customExerciseByName.values()) {
+    if (ex.name.toLowerCase() === lower) return true;
+  }
+  return false;
+}
+
+export function getLibraryExercisesForFocuses(
+  libraryNames: string[],
+  focuses: ExerciseCategory[],
+): ExerciseInfo[] {
+  if (focuses.length === 0) return [];
+
+  const librarySet = new Set(libraryNames);
+  return libraryNames
+    .map((name) => findExercise(name))
+    .filter(
+      (exercise): exercise is ExerciseInfo =>
+        !!exercise &&
+        librarySet.has(exercise.name) &&
+        focuses.includes(exercise.category),
+    );
 }
 
 export function getEnrichedCatalogue(): ExerciseInfo[] {
@@ -133,9 +217,13 @@ export function getCatalogueGrouped(
   options: {
     names?: string[];
     displayLabels?: boolean;
+    includeCustom?: boolean;
   } = {},
 ): Record<string, string[]> {
-  let catalogue = enrichedCatalogue;
+  let catalogue =
+    options.includeCustom === false
+      ? enrichedCatalogue
+      : getMergedCatalogue();
   if (options.names) {
     const allowed = new Set(options.names.map(resolveExerciseName));
     catalogue = catalogue.filter((ex) => allowed.has(ex.name));

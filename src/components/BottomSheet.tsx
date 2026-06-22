@@ -1,11 +1,14 @@
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   View,
   ViewStyle,
 } from "react-native";
 import { ReactNode, useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ColorScheme } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
 
@@ -25,6 +28,7 @@ export default function BottomSheet({
   sheetStyle,
 }: Props) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const s = useMemo(() => createStyles(colors), [colors]);
 
   return (
@@ -34,19 +38,33 @@ export default function BottomSheet({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={s.overlay}>
-        <Pressable style={s.backdrop} onPress={onClose} />
-        <View style={[s.sheet, { maxHeight, height: maxHeight }, sheetStyle]}>
-          <View style={s.handle} />
-          <View style={s.content}>{children}</View>
+      <KeyboardAvoidingView
+        style={s.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View style={s.overlay}>
+          <Pressable style={s.backdrop} onPress={onClose} />
+          <View
+            style={[
+              s.sheet,
+              { maxHeight, height: maxHeight, paddingBottom: 20 + insets.bottom },
+              sheetStyle,
+            ]}
+          >
+            <View style={s.handle} />
+            <View style={s.content}>{children}</View>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 function createStyles(colors: ColorScheme) {
   return StyleSheet.create({
+    keyboardAvoid: {
+      flex: 1,
+    },
     overlay: {
       flex: 1,
       backgroundColor: colors.bgOverlay,
@@ -61,7 +79,6 @@ function createStyles(colors: ColorScheme) {
       borderTopRightRadius: 20,
       paddingHorizontal: 20,
       paddingTop: 20,
-      paddingBottom: 40,
     },
     content: {
       flex: 1,

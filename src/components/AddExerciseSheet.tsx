@@ -4,18 +4,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
+  Keyboard,
 } from "react-native";
 import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
-import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
 import BottomSheet from "./BottomSheet";
 import {
-  groupCatalogueByCategory,
   filterCategoriesBySearch,
+  getMergedCatalogue,
+  groupCatalogueByCategory,
 } from "../utils/exerciseCatalogue";
 import ExerciseCategoryList from "./ExerciseCategoryList";
+import CustomExerciseSheet from "./CustomExerciseSheet";
 
 type Props = {
   visible: boolean;
@@ -25,18 +28,30 @@ type Props = {
 export default function AddExerciseSheet({ visible, onClose }: Props) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { libraryExercises, addToLibrary, removeFromLibrary } =
+  const { libraryExercises, customExercises, addToLibrary, removeFromLibrary } =
     useWorkoutStore();
   const [search, setSearch] = useState("");
+  const [showCustomSheet, setShowCustomSheet] = useState(false);
+  const [customDraftName, setCustomDraftName] = useState("");
+
+  useEffect(() => {
+    if (!visible) {
+      setSearch("");
+      setShowCustomSheet(false);
+      setCustomDraftName("");
+    }
+  }, [visible]);
 
   const groupedByCategory = useMemo(
-    () => groupCatalogueByCategory(EXERCISE_CATALOGUE),
-    [],
+    () => groupCatalogueByCategory(getMergedCatalogue()),
+    [customExercises],
   );
   const filteredCats = useMemo(
     () => filterCategoriesBySearch(groupedByCategory, search),
     [groupedByCategory, search],
   );
+  const trimmedSearch = search.trim();
+  const hasResults = Object.keys(filteredCats).length > 0;
 
   const toggleExercise = (name: string) => {
     if (libraryExercises.includes(name)) {
@@ -46,34 +61,104 @@ export default function AddExerciseSheet({ visible, onClose }: Props) {
     }
   };
 
+  const openCustomSheet = (draftName?: string) => {
+    Keyboard.dismiss();
+    setCustomDraftName(draftName ?? trimmedSearch);
+    setShowCustomSheet(true);
+  };
+
   return (
-    <BottomSheet visible={visible} onClose={onClose} maxHeight="80%">
-      <View style={s.body}>
-        <View style={s.titleRow}>
-          <Text style={s.title}>ADD EXERCISES</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={s.done}>DONE</Text>
-          </TouchableOpacity>
+    <>
+      <BottomSheet
+        visible={visible && !showCustomSheet}
+        onClose={onClose}
+        maxHeight="80%"
+      >
+        <View style={s.body}>
+          <View style={s.titleRow}>
+            <Text style={s.title}>ADD EXERCISES</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={s.done}>DONE</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TextInput
+            style={s.search}
+            placeholder="Search exercises..."
+            placeholderTextColor={colors.muted}
+            value={search}
+            onChangeText={setSearch}
+            autoFocus
+          />
+
+          {hasResults ? (
+            <ExerciseCategoryList
+              categories={filteredCats}
+              addedNames={libraryExercises}
+              onPress={toggleExercise}
+              styles={s}
+              allowToggle
+            />
+          ) : (
+            <ScrollView
+              style={s.emptyScroll}
+              contentContainerStyle={s.emptyScrollContent}
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="on-drag"
+              showsVerticalScrollIndicator={false}
+            >
+              {trimmedSearch ? (
+                <View style={s.emptySearch}>
+                  <Text style={s.emptySearchText}>
+                    No exercises match "{trimmedSearch}".
+                  </Text>
+                  <TouchableOpacity
+                    style={s.customBtn}
+                    onPress={() => openCustomSheet(trimmedSearch)}
+                  >
+                    <Text style={s.customBtnText}>
+                      ＋ Add "{trimmedSearch}" as custom exercise
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={s.emptySearch}>
+                  <Text style={s.emptySearchText}>
+                    Search the catalogue or add your own exercise.
+                  </Text>
+                  <TouchableOpacity
+                    style={s.customBtn}
+                    onPress={() => openCustomSheet()}
+                  >
+                    <Text style={s.customBtnText}>＋ Add custom exercise</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          )}
+
+          {hasResults && trimmedSearch ? (
+            <TouchableOpacity
+              style={s.customLink}
+              onPress={() => openCustomSheet(trimmedSearch)}
+            >
+              <Text style={s.customLinkText}>
+                Can't find it? Add "{trimmedSearch}" as custom
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
+      </BottomSheet>
 
-        <TextInput
-          style={s.search}
-          placeholder="Search exercises..."
-          placeholderTextColor={colors.muted}
-          value={search}
-          onChangeText={setSearch}
-          autoFocus
-        />
-
-        <ExerciseCategoryList
-          categories={filteredCats}
-          addedNames={libraryExercises}
-          onPress={toggleExercise}
-          styles={s}
-          allowToggle
-        />
-      </View>
-    </BottomSheet>
+      <CustomExerciseSheet
+        visible={showCustomSheet}
+        initialName={customDraftName}
+        onClose={() => setShowCustomSheet(false)}
+        onSaved={() => {
+          setSearch("");
+        }}
+      />
+    </>
   );
 }
 
@@ -82,6 +167,13 @@ function createStyles(colors: ColorScheme) {
     body: {
       flex: 1,
       minHeight: 0,
+    },
+    emptyScroll: {
+      flex: 1,
+      minHeight: 0,
+    },
+    emptyScrollContent: {
+      flexGrow: 1,
     },
     titleRow: {
       flexDirection: "row",
@@ -111,6 +203,46 @@ function createStyles(colors: ColorScheme) {
       fontSize: 14,
       color: colors.text,
       marginBottom: 16,
+    },
+    emptySearch: {
+      flex: 1,
+      justifyContent: "center",
+      paddingVertical: 24,
+      paddingHorizontal: 8,
+    },
+    emptySearchText: {
+      fontFamily: fonts.body,
+      fontSize: 13,
+      color: colors.muted,
+      textAlign: "center",
+      lineHeight: 20,
+      marginBottom: 16,
+    },
+    customBtn: {
+      borderWidth: 1,
+      borderColor: colors.amber + "66",
+      backgroundColor: colors.amber + "11",
+      borderRadius: 8,
+      padding: 14,
+      alignItems: "center",
+    },
+    customBtnText: {
+      fontFamily: fonts.display,
+      fontSize: 15,
+      color: colors.amber,
+      letterSpacing: 1,
+      textAlign: "center",
+    },
+    customLink: {
+      marginTop: 12,
+      paddingVertical: 8,
+      alignItems: "center",
+    },
+    customLinkText: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 12,
+      color: colors.amber,
+      textAlign: "center",
     },
     category: {
       marginBottom: 18,

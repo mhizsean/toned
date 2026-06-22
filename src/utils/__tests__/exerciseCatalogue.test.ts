@@ -6,12 +6,15 @@ import {
   findExercise,
   formatRepLabel,
   getActiveLibraryTags,
+  getLibraryExercisesForFocuses,
   getRepInputPlaceholder,
   groupCatalogueByCategory,
+  isDuplicateExerciseName,
   isTimedExercise,
   normalizeExerciseNames,
   resolveExerciseName,
   slugifyExerciseName,
+  syncCustomExercises,
 } from "../exerciseCatalogue";
 
 describe("slugifyExerciseName", () => {
@@ -37,6 +40,10 @@ describe("resolveExerciseName", () => {
 });
 
 describe("findExercise", () => {
+  beforeEach(() => {
+    syncCustomExercises([]);
+  });
+
   it("finds exercises by canonical name", () => {
     const exercise = findExercise("Push-Up");
     expect(exercise?.name).toBe("Push-Up");
@@ -59,6 +66,21 @@ describe("findExercise", () => {
 
   it("infers home-friendly tag for bodyweight equipment", () => {
     expect(findExercise("Push-Up")?.tags).toContain("home-friendly");
+  });
+
+  it("finds synced custom exercises", () => {
+    syncCustomExercises([
+      {
+        name: "Nordic Curl",
+        category: "Glutes & Legs",
+        equipment: "Bodyweight",
+        repLabel: "reps",
+      },
+    ]);
+
+    const exercise = findExercise("Nordic Curl");
+    expect(exercise?.isCustom).toBe(true);
+    expect(exercise?.category).toBe("Glutes & Legs");
   });
 });
 
@@ -89,6 +111,10 @@ describe("formatRepLabel", () => {
 });
 
 describe("filterPlannedExercisesByFocuses", () => {
+  beforeEach(() => {
+    syncCustomExercises([]);
+  });
+
   const exercises = [
     { name: "Hip Thrust (Barbell)" },
     { name: "Push-Up" },
@@ -111,6 +137,49 @@ describe("filterPlannedExercisesByFocuses", () => {
       "Core & Posture",
     ]);
     expect(result).toEqual([{ name: "Push-Up" }, { name: "Plank" }]);
+  });
+});
+
+describe("getLibraryExercisesForFocuses", () => {
+  beforeEach(() => {
+    syncCustomExercises([
+      {
+        name: "Nordic Curl",
+        category: "Glutes & Legs",
+        equipment: "Bodyweight",
+        repLabel: "reps",
+      },
+    ]);
+  });
+
+  it("returns custom library exercises that match selected focuses", () => {
+    const result = getLibraryExercisesForFocuses(
+      ["Nordic Curl", "Push-Up"],
+      ["Glutes & Legs"],
+    );
+    expect(result.map((exercise) => exercise.name)).toEqual(["Nordic Curl"]);
+  });
+});
+
+describe("isDuplicateExerciseName", () => {
+  beforeEach(() => {
+    syncCustomExercises([]);
+  });
+
+  it("detects built-in catalogue duplicates", () => {
+    expect(isDuplicateExerciseName("Push-Up")).toBe(true);
+  });
+
+  it("detects synced custom duplicates", () => {
+    syncCustomExercises([
+      {
+        name: "Nordic Curl",
+        category: "Glutes & Legs",
+        equipment: "Bodyweight",
+        repLabel: "reps",
+      },
+    ]);
+    expect(isDuplicateExerciseName("nordic curl")).toBe(true);
   });
 });
 

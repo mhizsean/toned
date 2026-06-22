@@ -13,7 +13,6 @@ import { useTheme } from "../context/ThemeContext";
 import { DayType, PlannedScheduleExercise } from "../types";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
-import { EXERCISE_CATALOGUE } from "../data/exerciseCatalogue";
 import {
   ExerciseCategory,
   EXERCISE_CATEGORIES,
@@ -26,7 +25,10 @@ import RemoveButton from "../components/RemoveButton";
 import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
 import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
 import { confirmDestructive } from "../utils/alerts";
-import { filterPlannedExercisesByFocuses } from "../utils/exerciseCatalogue";
+import {
+  filterPlannedExercisesByFocuses,
+  getLibraryExercisesForFocuses,
+} from "../utils/exerciseCatalogue";
 
 const DAY_TYPES: { label: string; value: DayType }[] = [
   { label: "🏋🏽 Gym", value: "gym" },
@@ -66,16 +68,9 @@ export default function DaySetupScreen() {
     PlannedScheduleExercise[]
   >(existing?.exercises || []);
 
-  const librarySet = useMemo(
-    () => new Set(libraryExercises),
-    [libraryExercises],
-  );
   const filteredExercises = useMemo(
-    () =>
-      EXERCISE_CATALOGUE.filter(
-        (ex) => focuses.includes(ex.category) && librarySet.has(ex.name),
-      ),
-    [focuses, librarySet],
+    () => getLibraryExercisesForFocuses(libraryExercises, focuses),
+    [focuses, libraryExercises],
   );
   const addedExerciseNames = useMemo(
     () => new Set(exercises.map((ex) => ex.name)),

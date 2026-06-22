@@ -2,13 +2,21 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DaySchedule, Session, WeeklySchedule, WorkoutSet } from '../types';
 import {
+  CustomExercise,
+  CustomExerciseInput,
+} from '../types/customExercise';
+import {
   findExercise,
+  isDuplicateExerciseName,
+  normalizeCustomExerciseName,
   normalizeExerciseNames,
   resolveExerciseName,
+  syncCustomExercises,
 } from '../utils/exerciseCatalogue';
 import { migrateDaySchedule } from '../data/exerciseTypes';
 
 const ACTIVE_SESSION_KEY = 'toned_active_session';
+const CUSTOM_EXERCISES_KEY = 'toned_custom_exercises';
 
 function toCanonicalName(name: string): string {
   return findExercise(name)?.name ?? resolveExerciseName(name);
@@ -56,9 +64,12 @@ type WorkoutStore = {
   loadActiveSession: () => void;
   deleteSession: (id: string) => void;
   libraryExercises: string[];
+  customExercises: CustomExercise[];
   addToLibrary: (name: string) => void;
   removeFromLibrary: (name: string) => void;
   loadLibrary: () => void;
+  loadCustomExercises: () => void;
+  addCustomExercise: (input: CustomExerciseInput) => Promise<void>;
   weeklySchedule: WeeklySchedule;
   loadSchedule: () => void;
   saveDaySchedule: (day: string, schedule: DaySchedule) => Promise<void>;
@@ -81,6 +92,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   activeSession: null,
   scheduleLoaded: false,
   libraryExercises: [],
+  customExercises: [],
   weeklySchedule: {},
 
   loadSessions: async () => {
@@ -206,6 +218,54 @@ removeFromLibrary: async (name) => {
   const updated = libraryExercises.filter((ex) => ex !== canonical);
   set({ libraryExercises: updated });
   AsyncStorage.setItem('toned_library', JSON.stringify(updated));
+},
+
+loadCustomExercises: async () => {
+  try {
+    const data = await AsyncStorage.getItem(CUSTOM_EXERCISES_KEY);
+    const customExercises: CustomExercise[] = data ? JSON.parse(data) : [];
+    syncCustomExercises(customExercises);
+    set({ customExercises });
+  } catch (e) {
+    console.error('Failed to load custom exercises', e);
+    syncCustomExercises([]);
+    set({ customExercises: [] });
+  }
+},
+
+addCustomExercise: async (input) => {
+  const name = normalizeCustomExerciseName(input.name);
+  if (!name || isDuplicateExerciseName(name)) {
+    throw new Error('duplicate_or_invalid_name');
+  }
+
+  const custom: CustomExercise = {
+    name,
+    category: input.category,
+    equipment: input.equipment?.trim() || 'Custom',
+    repLabel: input.repLabel,
+  };
+
+  const { customExercises, libraryExercises } = get();
+  const updatedCustom = [
+    ...customExercises.filter((exercise) => exercise.name !== name),
+    custom,
+  ];
+  const updatedLibrary = libraryExercises.includes(name)
+    ? libraryExercises
+    : [...libraryExercises, name];
+
+  syncCustomExercises(updatedCustom);
+  set({
+    customExercises: updatedCustom,
+    libraryExercises: updatedLibrary,
+  });
+
+  await AsyncStorage.setItem(
+    CUSTOM_EXERCISES_KEY,
+    JSON.stringify(updatedCustom),
+  );
+  await AsyncStorage.setItem('toned_library', JSON.stringify(updatedLibrary));
 },
 
 

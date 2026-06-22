@@ -8,15 +8,19 @@ import {
 } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useWorkoutStore } from "../workoutStore";
+import { findExercise, syncCustomExercises } from "../../utils/exerciseCatalogue";
 
 const ACTIVE_SESSION_KEY = "toned_active_session";
+const CUSTOM_EXERCISES_KEY = "toned_custom_exercises";
 
 function resetStore() {
+  syncCustomExercises([]);
   useWorkoutStore.setState({
     sessions: [],
     activeSession: null,
     scheduleLoaded: false,
     libraryExercises: [],
+    customExercises: [],
     weeklySchedule: {},
   });
 }
@@ -211,6 +215,62 @@ describe("workoutStore", () => {
       await useWorkoutStore.getState().removeFromLibrary("RDL");
 
       expect(useWorkoutStore.getState().libraryExercises).toEqual(["Push-Up"]);
+    });
+  });
+
+  describe("custom exercises", () => {
+    it("saves a custom exercise to storage and library", async () => {
+      await useWorkoutStore.getState().addCustomExercise({
+        name: "Nordic Curl",
+        category: "Glutes & Legs",
+        equipment: "Bodyweight",
+        repLabel: "reps",
+      });
+
+      const state = useWorkoutStore.getState();
+      expect(state.customExercises).toEqual([
+        {
+          name: "Nordic Curl",
+          category: "Glutes & Legs",
+          equipment: "Bodyweight",
+          repLabel: "reps",
+        },
+      ]);
+      expect(state.libraryExercises).toEqual(["Nordic Curl"]);
+
+      const storedCustom = JSON.parse(
+        (await AsyncStorage.getItem(CUSTOM_EXERCISES_KEY))!,
+      );
+      expect(storedCustom[0].name).toBe("Nordic Curl");
+    });
+
+    it("loads custom exercises and syncs the registry", async () => {
+      await AsyncStorage.setItem(
+        CUSTOM_EXERCISES_KEY,
+        JSON.stringify([
+          {
+            name: "Landmine Press",
+            category: "Upper Body",
+            equipment: "Barbell",
+            repLabel: "reps",
+          },
+        ]),
+      );
+
+      await useWorkoutStore.getState().loadCustomExercises();
+
+      expect(useWorkoutStore.getState().customExercises).toHaveLength(1);
+      expect(findExercise("Landmine Press")?.isCustom).toBe(true);
+    });
+
+    it("rejects duplicate custom exercise names", async () => {
+      await expect(
+        useWorkoutStore.getState().addCustomExercise({
+          name: "Push-Up",
+          category: "Upper Body",
+          repLabel: "reps",
+        }),
+      ).rejects.toThrow("duplicate_or_invalid_name");
     });
   });
 
