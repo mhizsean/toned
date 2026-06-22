@@ -458,7 +458,7 @@ function createStyles(colors: ColorScheme) {
     },
     libWrap: {
       gap: 10,
-      paddingHorizontal: 20,
+      paddingHorizontal: 4,
     },
     tagFilterSection: {
       marginBottom: 4,
