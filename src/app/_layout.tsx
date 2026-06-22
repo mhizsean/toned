@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, View, StyleSheet } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts, BebasNeue_400Regular } from "@expo-google-fonts/bebas-neue";
 import {
@@ -51,36 +51,38 @@ function AppLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: {
-          paddingBottom: sceneBottomInset,
-        },
-        tabBarStyle: {
-          position: "absolute",
-          left: 16,
-          right: 16,
-          bottom: tabBarBottomInset,
-          height: tabBarHeight,
-          paddingTop: 10,
-          paddingBottom: 10,
-          backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          borderRadius: 28,
-          marginHorizontal: 14,
-          ...Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.14,
-              shadowRadius: 12,
-            },
-            android: {
-              elevation: 10,
-            },
-          }),
-        },
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          sceneStyle: {
+            backgroundColor: colors.background,
+            paddingBottom: sceneBottomInset,
+          },
+          tabBarStyle: {
+            position: "absolute",
+            left: 16,
+            right: 16,
+            bottom: tabBarBottomInset,
+            height: tabBarHeight,
+            paddingTop: 10,
+            paddingBottom: 10,
+            backgroundColor: colors.surface,
+            borderTopWidth: 0,
+            borderRadius: 28,
+            marginHorizontal: 14,
+            ...Platform.select({
+              ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.14,
+                shadowRadius: 12,
+              },
+              android: {
+                elevation: 10,
+              },
+            }),
+          },
         tabBarItemStyle: {
           paddingVertical: 2,
         },
@@ -154,8 +156,15 @@ function AppLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
 
 export default function RootLayout() {
   return (
