@@ -52,67 +52,67 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-        <View style={s.header}>
-          <Text style={s.title}>HISTORY</Text>
-          <Text style={s.sub}>{sessions.length} SESSIONS LOGGED</Text>
-        </View>
+      <View style={s.header}>
+        <Text style={s.title}>HISTORY</Text>
+        <Text style={s.sub}>{sessions.length} SESSIONS LOGGED</Text>
+      </View>
 
-        <ScrollView>
-          {sessionItems.map(({ session, isOpen, topWeight }) => (
-            <TouchableOpacity
-              key={session.id}
-              style={[s.card, isOpen && s.cardOpen]}
-              onPress={() => setExpanded(isOpen ? null : session.id)}
-              activeOpacity={0.8}
-            >
-              <View style={s.cardTop}>
-                <Text style={s.cardDate}>{formatDate(session.date)}</Text>
-                <View style={s.cardTopRight}>
-                  {topWeight > 0 ? (
-                    <Text style={s.cardWeight}>top {topWeight}kg</Text>
-                  ) : null}
-                  <DeleteIconButton
-                    stopPropagation
-                    title="Delete Session"
-                    message="Are you sure you want to delete this session? This cannot be undone."
-                    onDelete={() => {
-                      deleteSession(session.id);
-                      if (expanded === session.id) setExpanded(null);
-                    }}
-                  />
-                </View>
+      <ScrollView>
+        {sessionItems.map(({ session, isOpen, topWeight }) => (
+          <TouchableOpacity
+            key={session.id}
+            style={[s.card, isOpen && s.cardOpen]}
+            onPress={() => setExpanded(isOpen ? null : session.id)}
+            activeOpacity={0.8}
+          >
+            <View style={s.cardTop}>
+              <Text style={s.cardDate}>{formatDate(session.date)}</Text>
+              <View style={s.cardTopRight}>
+                {topWeight > 0 ? (
+                  <Text style={s.cardWeight}>top {topWeight}kg</Text>
+                ) : null}
+                <DeleteIconButton
+                  stopPropagation
+                  title="Delete Session"
+                  message="Are you sure you want to delete this session? This cannot be undone."
+                  onDelete={() => {
+                    deleteSession(session.id);
+                    if (expanded === session.id) setExpanded(null);
+                  }}
+                />
               </View>
+            </View>
 
-              <ExerciseTagRow>
+            <ExerciseTagRow>
+              {session.exercises.map((ex) => (
+                <ExerciseTag key={ex.name} name={ex.name} />
+              ))}
+            </ExerciseTagRow>
+
+            {isOpen && (
+              <View style={s.breakdown}>
+                <View style={s.divider} />
                 {session.exercises.map((ex) => (
-                  <ExerciseTag key={ex.name} name={ex.name} />
-                ))}
-              </ExerciseTagRow>
-
-              {isOpen && (
-                <View style={s.breakdown}>
-                  <View style={s.divider} />
-                  {session.exercises.map((ex) => (
-                    <View key={ex.name} style={s.exSection}>
-                      <Text style={s.exName}>{ex.name}</Text>
-                      {ex.sets.map((set, si) => {
-                        const repLabel = findExercise(ex.name)?.repLabel;
-                        return (
+                  <View key={ex.name} style={s.exSection}>
+                    <Text style={s.exName}>{ex.name}</Text>
+                    {ex.sets.map((set, si) => {
+                      const repLabel = findExercise(ex.name)?.repLabel;
+                      return (
                         <View key={`${ex.name}-set-${si}`} style={s.setRow}>
                           <Text style={s.setNum}>#{si + 1}</Text>
                           <Text style={s.setInfo}>
                             {formatSet(set.weight, set.reps, repLabel)}
                           </Text>
                         </View>
-                        );
-                      })}
-                    </View>
-                  ))}
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -169,6 +169,7 @@ function createStyles(colors: ColorScheme) {
       borderRadius: 10,
       padding: 14,
       marginBottom: 10,
+      marginHorizontal: 16,
     },
     cardOpen: {
       borderColor: colors.amber + "55",
