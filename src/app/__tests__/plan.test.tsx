@@ -184,4 +184,17 @@ describe("PlanScreen", () => {
 
     expect(screen.getByText("AddExerciseSheet")).toBeTruthy();
   });
+
+  it("removes an exercise from the library via the remove button", () => {
+    useWorkoutStore.setState({
+      libraryExercises: ["Push-Up"],
+    });
+
+    renderPlan();
+    fireEvent.press(screen.getByText("LIBRARY"));
+    fireEvent.press(screen.getByText(/1 exercise/));
+    fireEvent.press(screen.getByText("✕"));
+
+    expect(useWorkoutStore.getState().libraryExercises).toEqual([]);
+  });
 });

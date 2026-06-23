@@ -20,6 +20,7 @@ import {
 import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
+import RemoveButton from "../components/RemoveButton";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 
@@ -31,7 +32,7 @@ export default function PlanScreen() {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [libraryTag, setLibraryTag] = useState<ExerciseTagId | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const { libraryExercises, weeklySchedule } = useWorkoutStore();
+  const { libraryExercises, weeklySchedule, removeFromLibrary } = useWorkoutStore();
   const typeBadge = getTypeBadge(colors);
 
   const availableTags = useMemo(
@@ -266,25 +267,30 @@ export default function PlanScreen() {
                               const isCustom = exercise?.isCustom;
                               return (
                                 <View key={ex} style={styles.libExRow}>
-                                  <Text style={styles.libExName}>{ex}</Text>
-                                  {(isCustom || tags.length > 0) && (
-                                    <View style={styles.libExTagRow}>
-                                      {isCustom && (
-                                        <View style={styles.libExTag}>
-                                          <Text style={styles.libExTagText}>
-                                            Custom
-                                          </Text>
-                                        </View>
-                                      )}
-                                      {tags.map((tag) => (
-                                        <View key={tag} style={styles.libExTag}>
-                                          <Text style={styles.libExTagText}>
-                                            {getExerciseTagLabel(tag)}
-                                          </Text>
-                                        </View>
-                                      ))}
-                                    </View>
-                                  )}
+                                  <View style={styles.libExInfo}>
+                                    <Text style={styles.libExName}>{ex}</Text>
+                                    {(isCustom || tags.length > 0) && (
+                                      <View style={styles.libExTagRow}>
+                                        {isCustom && (
+                                          <View style={styles.libExTag}>
+                                            <Text style={styles.libExTagText}>
+                                              Custom
+                                            </Text>
+                                          </View>
+                                        )}
+                                        {tags.map((tag) => (
+                                          <View key={tag} style={styles.libExTag}>
+                                            <Text style={styles.libExTagText}>
+                                              {getExerciseTagLabel(tag)}
+                                            </Text>
+                                          </View>
+                                        ))}
+                                      </View>
+                                    )}
+                                  </View>
+                                  <RemoveButton
+                                    onPress={() => removeFromLibrary(ex)}
+                                  />
                                 </View>
                               );
                             })}
@@ -532,10 +538,17 @@ function createStyles(colors: ColorScheme) {
       borderColor: colors.border,
     },
     libExRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderBottomWidth: 1,
       borderColor: colors.border,
+      gap: 12,
+    },
+    libExInfo: {
+      flex: 1,
       gap: 6,
     },
     libExName: {
