@@ -5,19 +5,24 @@ import { useTheme } from "../context/ThemeContext";
 import { fonts, ColorScheme } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TouchableOpacity, Linking } from "react-native";
+import { useTabBarInset } from "../hooks/useTabBarInset";
+
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
+  const tabBarInset = useTabBarInset();
   const s = useMemo(() => createStyles(colors), [colors]);
   const appVersion = Constants.expoConfig?.version ?? "—";
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={["top"]}>
         <View style={s.header}>
           <Text style={s.title}>SETTINGS</Text>
           <Text style={s.sub}>SET PREFERENCE</Text>
         </View>
 
-        <ScrollView contentContainerStyle={s.scroll}>
+        <ScrollView
+          contentContainerStyle={[s.scroll, { paddingBottom: tabBarInset }]}
+        >
           <Text style={s.sectionLabel}>APPEARANCE</Text>
           <View style={s.card}>
             <View style={s.row}>

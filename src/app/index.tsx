@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo, useState } from "react";
 import { useToday } from "../hooks/useToday";
+import { useTabBarInset } from "../hooks/useTabBarInset";
 import { WorkoutSet } from "../types";
 import TodayPlanSheet from "../components/TodayPlanSheet";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
@@ -23,6 +24,7 @@ import { isTodayPlanComplete } from "../utils/todayWorkout";
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
   const today = useToday();
+  const tabBarInset = useTabBarInset();
   const { sessions, activeSession, startSession, weeklySchedule, libraryExercises } =
     useWorkoutStore();
   const { colors } = useTheme();
@@ -79,8 +81,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe}>
-      <ScrollView contentContainerStyle={s.scroll}>
+    <SafeAreaView style={s.safe} edges={["top"]}>
+      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: tabBarInset }]}>
         <View style={s.header}>
           <Text style={s.wordmark}>TONED</Text>
           <Text style={s.date}>{formatDate()}</Text>

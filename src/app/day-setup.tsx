@@ -11,7 +11,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import { fonts, ColorScheme } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
 import { DayType, PlannedScheduleExercise } from "../types";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import {
   ExerciseCategory,
@@ -38,6 +41,8 @@ const DAY_TYPES: { label: string; value: DayType }[] = [
 
 export default function DaySetupScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 12) + 20;
   const s = useMemo(() => createStyles(colors), [colors]);
   const { day } = useLocalSearchParams<{ day: string }>();
   const { libraryExercises, weeklySchedule, saveDaySchedule, scheduleLoaded } =
@@ -165,7 +170,7 @@ export default function DaySetupScreen() {
 
   if (!scheduleLoaded) {
     return (
-      <SafeAreaView style={s.safe}>
+      <SafeAreaView style={s.safe} edges={["top"]}>
         <View style={s.loading}>
           <Text style={s.loadingText}>LOADING…</Text>
         </View>
@@ -174,7 +179,7 @@ export default function DaySetupScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={["top"]}>
         <View style={s.header}>
           <TouchableOpacity onPress={handleBack}>
             <Text style={s.back}>← BACK</Text>
@@ -202,7 +207,9 @@ export default function DaySetupScreen() {
           )}
         </View>
 
-        <ScrollView contentContainerStyle={s.scroll}>
+        <ScrollView
+          contentContainerStyle={[s.scroll, { paddingBottom: bottomPadding }]}
+        >
           <Text style={s.sectionLabel}>DAY TYPE</Text>
           <View style={s.typeRow}>
             {DAY_TYPES.map((t) => (
@@ -466,7 +473,6 @@ function createStyles(colors: ColorScheme) {
     },
     scroll: {
       padding: 20,
-      paddingTop: 10,
     },
     sectionLabel: {
       fontFamily: fonts.body,
@@ -602,7 +608,7 @@ function createStyles(colors: ColorScheme) {
     exEmpty: {
       padding: 16,
       backgroundColor: colors.surface,
-      borderRadius: 8,
+      borderRadius: 10,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
@@ -616,7 +622,7 @@ function createStyles(colors: ColorScheme) {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: 10,
       padding: 14,
       marginBottom: 8,
     },
@@ -650,7 +656,7 @@ function createStyles(colors: ColorScheme) {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: 10,
       marginTop: 8,
       overflow: "hidden",
     },

@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import HomeScreen from "../index";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Session } from "../../types";
 
 jest.mock("expo-router", () => {
@@ -75,12 +76,18 @@ jest.mock("../../components/TodayPlanSheet", () => {
 
 const TODAY_ISO = "2026-06-17T10:00:00.000Z";
 const SAMPLE_DAY = new Date(2026, 5, 17, 12, 0, 0);
+const TEST_SAFE_AREA = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 function renderHome() {
   return render(
-    <ThemeProvider>
-      <HomeScreen />
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+      <ThemeProvider>
+        <HomeScreen />
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 

@@ -16,12 +16,14 @@ import DeleteIconButton from "../components/DeleteIconButton";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
 import { formatSet } from "../utils/formatWorkout";
 import { findExercise } from "../utils/exerciseCatalogue";
+import { useTabBarInset } from "../hooks/useTabBarInset";
 
 export default function HistoryScreen() {
   const { sessions, deleteSession } = useWorkoutStore();
   const { expand } = useLocalSearchParams<{ expand?: string }>();
   const [expanded, setExpanded] = useState<string | null>(null);
   const { colors } = useTheme();
+  const tabBarInset = useTabBarInset();
   const s = useMemo(() => createStyles(colors), [colors]);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function HistoryScreen() {
 
   if (sessions.length === 0) {
     return (
-      <SafeAreaView style={s.safe}>
+      <SafeAreaView style={s.safe} edges={["top"]}>
         <View style={s.empty}>
           <Text style={s.emptyTitle}>NO HISTORY</Text>
           <Text style={s.emptySub}>Complete a session to see it here</Text>
@@ -51,13 +53,13 @@ export default function HistoryScreen() {
   });
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={["top"]}>
       <View style={s.header}>
         <Text style={s.title}>HISTORY</Text>
         <Text style={s.sub}>{sessions.length} SESSIONS LOGGED</Text>
       </View>
 
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ paddingBottom: tabBarInset }}>
         {sessionItems.map(({ session, isOpen, topWeight }) => (
           <TouchableOpacity
             key={session.id}

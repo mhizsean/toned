@@ -12,7 +12,13 @@ import { useLocalSearchParams } from "expo-router";
 import HistoryScreen from "../history";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Session } from "../../types";
+
+const TEST_SAFE_AREA = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 jest.mock("expo-router", () => ({
   useLocalSearchParams: jest.fn(),
@@ -63,9 +69,11 @@ const SESSION: Session = {
 
 function renderHistory() {
   return render(
-    <ThemeProvider>
-      <HistoryScreen />
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+      <ThemeProvider>
+        <HistoryScreen />
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 

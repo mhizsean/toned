@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import PlanScreen from "../plan";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 jest.mock("expo-router", () => {
   const React = require("react");
@@ -66,11 +67,18 @@ jest.mock("../../components/AddExerciseSheet", () => {
   };
 });
 
+const TEST_SAFE_AREA = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
 function renderPlan() {
   return render(
-    <ThemeProvider>
-      <PlanScreen />
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+      <ThemeProvider>
+        <PlanScreen />
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 

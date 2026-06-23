@@ -6,10 +6,12 @@ import { formatDate } from "../constants/storage";
 import { calculatePRs, comparePRs, formatPRPrimary, formatPRSecondary } from "../utils/prCalculations";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo } from "react";
+import { useTabBarInset } from "../hooks/useTabBarInset";
 
 export default function PRsScreen() {
   const { sessions } = useWorkoutStore();
   const { colors } = useTheme();
+  const tabBarInset = useTabBarInset();
   const s = useMemo(() => createStyles(colors), [colors]);
   const entries = Object.entries(calculatePRs(sessions)).sort(([nameA, prA], [nameB, prB]) =>
     comparePRs(nameA, prA, prB) || nameA.localeCompare(nameB),
@@ -17,7 +19,7 @@ export default function PRsScreen() {
 
   if (entries.length === 0) {
     return (
-      <SafeAreaView style={s.safe}>
+      <SafeAreaView style={s.safe} edges={["top"]}>
         <View style={s.empty}>
           <Text style={s.emptyTitle}>NO PRs YET</Text>
           <Text style={s.emptySub}>Log sessions to see your records here</Text>
@@ -27,7 +29,7 @@ export default function PRsScreen() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={["top"]}>
         <View style={s.header}>
           <Text style={s.title}>RECORDS</Text>
           <Text style={s.sub}>
@@ -35,7 +37,9 @@ export default function PRsScreen() {
           </Text>
         </View>
 
-        <ScrollView contentContainerStyle={s.scroll}>
+        <ScrollView
+          contentContainerStyle={[s.scroll, { paddingBottom: tabBarInset }]}
+        >
           {entries.map(([name, pr]) => {
             const secondary = formatPRSecondary(name, pr);
             return (

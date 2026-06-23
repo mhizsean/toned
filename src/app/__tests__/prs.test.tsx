@@ -11,15 +11,23 @@ import { render, screen } from "@testing-library/react-native";
 import PRsScreen from "../prs";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Session } from "../../types";
+
+const TEST_SAFE_AREA = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 const SAMPLE_DAY = new Date(2026, 5, 17, 12, 0, 0);
 
 function renderPRs() {
   return render(
-    <ThemeProvider>
-      <PRsScreen />
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+      <ThemeProvider>
+        <PRsScreen />
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 

@@ -24,9 +24,11 @@ import AddExerciseSheet from "../components/AddExerciseSheet";
 import RemoveButton from "../components/RemoveButton";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
+import { useTabBarInset } from "../hooks/useTabBarInset";
 
 export default function PlanScreen() {
   const { colors } = useTheme();
+  const tabBarInset = useTabBarInset();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [tab, setTab] = useState<"schedule" | "library">("schedule");
@@ -67,7 +69,7 @@ export default function PlanScreen() {
   }, [libraryTag, availableTags]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.wordmark}>TONED</Text>
         <Text style={styles.sub}>YOUR PLAN</Text>
@@ -87,7 +89,9 @@ export default function PlanScreen() {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarInset }]}
+      >
         {tab === "schedule" && (
           <View>
             {DAYS.map((day) => {
@@ -376,7 +380,6 @@ function createStyles(colors: ColorScheme) {
     },
     scroll: {
       padding: 20,
-      paddingBottom: 60,
     },
     dayRow: {
       marginBottom: 16,

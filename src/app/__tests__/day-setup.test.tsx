@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import DaySetupScreen from "../day-setup";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { confirmDestructive } from "../../utils/alerts";
 
 jest.mock("expo-router", () => ({
@@ -69,11 +70,18 @@ const mockUseLocalSearchParams = useLocalSearchParams as jest.MockedFunction<
   typeof useLocalSearchParams
 >;
 
+const TEST_SAFE_AREA = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
 function renderDaySetup() {
   return render(
-    <ThemeProvider>
-      <DaySetupScreen />
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+      <ThemeProvider>
+        <DaySetupScreen />
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 
@@ -143,9 +151,11 @@ describe("DaySetupScreen", () => {
 
     act(() => {
       view.rerender(
-        <ThemeProvider>
-          <DaySetupScreen />
-        </ThemeProvider>,
+        <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+          <ThemeProvider>
+            <DaySetupScreen />
+          </ThemeProvider>
+        </SafeAreaProvider>,
       );
     });
 
