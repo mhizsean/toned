@@ -17,7 +17,8 @@ import {
   getCatalogueGrouped,
   getExerciseTagLabel,
 } from "../utils/exerciseCatalogue";
-import { DAYS, TODAY, getTypeBadge } from "../constants/planning";
+import { DAYS, getTypeBadge } from "../constants/planning";
+import { useToday } from "../hooks/useToday";
 import { useWorkoutStore } from "../store/workoutStore";
 import AddExerciseSheet from "../components/AddExerciseSheet";
 import RemoveButton from "../components/RemoveButton";
@@ -33,6 +34,7 @@ export default function PlanScreen() {
   const [libraryTag, setLibraryTag] = useState<ExerciseTagId | null>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const { libraryExercises, weeklySchedule, removeFromLibrary } = useWorkoutStore();
+  const today = useToday();
   const typeBadge = getTypeBadge(colors);
 
   const availableTags = useMemo(
@@ -90,7 +92,7 @@ export default function PlanScreen() {
           <View>
             {DAYS.map((day) => {
               const schedule = weeklySchedule[day];
-              const isToday = day === TODAY;
+              const isToday = day === today;
               const isConfigured = isDayConfigured(schedule);
 
               return (

@@ -14,16 +14,22 @@ import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
 import { Session } from "../../types";
 
-jest.mock("expo-router", () => ({
-  router: {
-    push: jest.fn(),
-    navigate: jest.fn(),
-    replace: jest.fn(),
-  },
-}));
+jest.mock("expo-router", () => {
+  const React = require("react");
+  return {
+    router: {
+      push: jest.fn(),
+      navigate: jest.fn(),
+      replace: jest.fn(),
+    },
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => callback(), [callback]);
+    },
+  };
+});
 
 jest.mock("../../constants/planning", () => ({
-  TODAY: "Wed",
+  getToday: () => "Wed",
   DAYS: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 }));
 

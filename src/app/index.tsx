@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo, useState } from "react";
-import { TODAY } from "../constants/planning";
+import { useToday } from "../hooks/useToday";
 import { WorkoutSet } from "../types";
 import TodayPlanSheet from "../components/TodayPlanSheet";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
@@ -22,6 +22,7 @@ import { isTodayPlanComplete } from "../utils/todayWorkout";
 
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
+  const today = useToday();
   const { sessions, activeSession, startSession, weeklySchedule, libraryExercises } =
     useWorkoutStore();
   const { colors } = useTheme();
@@ -31,7 +32,7 @@ export default function HomeScreen() {
     (session) => new Date(session.date) > new Date(Date.now() - 7 * 86_400_000),
   ).length;
 
-  const todayPlan = weeklySchedule[TODAY];
+  const todayPlan = weeklySchedule[today];
   const totalPRs = Object.keys(calculatePRs(sessions)).length;
   const todayComplete = isTodayPlanComplete(todayPlan, sessions);
 

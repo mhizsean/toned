@@ -12,15 +12,23 @@ import PlanScreen from "../plan";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
 
-jest.mock("expo-router", () => ({
-  router: {
-    push: jest.fn(),
-  },
-  useLocalSearchParams: jest.fn(() => ({})),
-}));
+jest.mock("expo-router", () => {
+  const React = require("react");
+  return {
+    router: {
+      push: jest.fn(),
+    },
+    useLocalSearchParams: jest.fn(() => ({})),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => callback(), [callback]);
+    },
+  };
+});
 
 jest.mock("../../constants/planning", () => {
   const actual = jest.requireActual("../../constants/planning") as {
+    getToday: () => string;
+    DAYS: readonly string[];
     getTypeBadge: (colors: import("../../constants/theme").ColorScheme) => Record<
       string,
       { label: string; color: string }
@@ -28,8 +36,8 @@ jest.mock("../../constants/planning", () => {
   };
 
   return {
-    TODAY: "Wed",
-    DAYS: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    getToday: () => "Wed",
+    DAYS: actual.DAYS,
     getTypeBadge: actual.getTypeBadge,
   };
 });
