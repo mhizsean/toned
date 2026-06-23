@@ -318,5 +318,62 @@ describe("workoutStore", () => {
       const stored = JSON.parse((await AsyncStorage.getItem("toned_schedule"))!);
       expect(stored.Tue.exercises[0].name).toBe("Romanian Deadlift (RDL)");
     });
+
+    it("drops gym days with no focuses when loading schedule", async () => {
+      await AsyncStorage.setItem(
+        "toned_schedule",
+        JSON.stringify({
+          Wed: {
+            type: "gym",
+            focuses: [],
+            exercises: [],
+          },
+          Thu: {
+            type: "rest",
+            focuses: [],
+            exercises: [],
+          },
+        }),
+      );
+
+      await useWorkoutStore.getState().loadSchedule();
+
+      expect(useWorkoutStore.getState().weeklySchedule.Wed).toBeUndefined();
+      expect(useWorkoutStore.getState().weeklySchedule.Thu).toEqual({
+        type: "rest",
+        focuses: [],
+        exercises: [],
+      });
+    });
+
+    it("clears a day from the schedule", async () => {
+      await useWorkoutStore.getState().saveDaySchedule("Wed", {
+        type: "gym",
+        focuses: ["Upper Body"],
+        exercises: [{ name: "Push-Up" }],
+      });
+
+      await useWorkoutStore.getState().clearDaySchedule("Wed");
+
+      expect(useWorkoutStore.getState().weeklySchedule.Wed).toBeUndefined();
+      const stored = JSON.parse((await AsyncStorage.getItem("toned_schedule"))!);
+      expect(stored.Wed).toBeUndefined();
+    });
+
+    it("clears a day when saving gym schedule without focuses", async () => {
+      await useWorkoutStore.getState().saveDaySchedule("Wed", {
+        type: "gym",
+        focuses: ["Upper Body"],
+        exercises: [{ name: "Push-Up" }],
+      });
+
+      await useWorkoutStore.getState().saveDaySchedule("Wed", {
+        type: "gym",
+        focuses: [],
+        exercises: [],
+      });
+
+      expect(useWorkoutStore.getState().weeklySchedule.Wed).toBeUndefined();
+    });
   });
 });

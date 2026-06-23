@@ -153,16 +153,40 @@ describe("DaySetupScreen", () => {
     expect(screen.queryByText("LOADING…")).toBeNull();
   });
 
-  it("blocks save when gym day has no focus selected", () => {
+  it("clears the day when all focuses are removed and saved", async () => {
+    useWorkoutStore.setState({
+      weeklySchedule: {
+        Wed: {
+          type: "gym",
+          focuses: ["Upper Body"],
+          exercises: [{ name: "Push-Up" }],
+        },
+      },
+    });
+
+    renderDaySetup();
+    fireEvent.press(screen.getByText("EDIT"));
+    fireEvent.press(screen.getByText("✕"));
+
+    await act(async () => {
+      fireEvent.press(screen.getByText("SAVE"));
+    });
+
+    expect(useWorkoutStore.getState().weeklySchedule.Wed).toBeUndefined();
+    expect(router.navigate).toHaveBeenCalledWith("/plan");
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it("returns to plan without creating a schedule when saving a new day with no focus", async () => {
     renderDaySetup();
 
-    fireEvent.press(screen.getByText("SAVE"));
+    await act(async () => {
+      fireEvent.press(screen.getByText("SAVE"));
+    });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Missing Focus",
-      "Please select at least one focus for this day.",
-    );
-    expect(router.navigate).not.toHaveBeenCalled();
+    expect(useWorkoutStore.getState().weeklySchedule.Wed).toBeUndefined();
+    expect(router.navigate).toHaveBeenCalledWith("/plan");
+    expect(Alert.alert).not.toHaveBeenCalled();
   });
 
   it("saves a configured gym day and returns to plan", async () => {

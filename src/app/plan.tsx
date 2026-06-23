@@ -8,7 +8,7 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getDayFocusLabel } from "../data/exerciseTypes";
+import { getDayFocusLabel, isDayConfigured } from "../data/exerciseTypes";
 import {
   ExerciseTagId,
   filterLibraryByTag,
@@ -91,6 +91,7 @@ export default function PlanScreen() {
             {DAYS.map((day) => {
               const schedule = weeklySchedule[day];
               const isToday = day === TODAY;
+              const isConfigured = isDayConfigured(schedule);
 
               return (
                 <TouchableOpacity
@@ -115,25 +116,25 @@ export default function PlanScreen() {
                       )}
                     </View>
 
-                    {schedule ? (
+                    {isConfigured ? (
                       <>
                         <Text style={styles.dayFocus}>
-                          {getDayFocusLabel(schedule)}
+                          {getDayFocusLabel(schedule!)}
                         </Text>
-                        {schedule.type !== "rest" &&
-                          schedule.exercises.length > 0 && (
+                        {schedule!.type !== "rest" &&
+                          schedule!.exercises.length > 0 && (
                             <View style={styles.exTagRow}>
-                              {schedule.exercises.slice(0, 3).map((ex) => (
+                              {schedule!.exercises.slice(0, 3).map((ex) => (
                                 <View key={ex.name} style={styles.exTag}>
                                   <Text style={styles.exTagText}>
                                     {ex.name}
                                   </Text>
                                 </View>
                               ))}
-                              {schedule.exercises.length > 3 && (
+                              {schedule!.exercises.length > 3 && (
                                 <View style={styles.exTag}>
                                   <Text style={styles.exTagText}>
-                                    +{schedule.exercises.length - 3} more
+                                    +{schedule!.exercises.length - 3} more
                                   </Text>
                                 </View>
                               )}
@@ -148,22 +149,22 @@ export default function PlanScreen() {
                   </View>
 
                   <View style={styles.dayCardRight}>
-                    {schedule && (
+                    {isConfigured && (
                       <View
                         style={[
                           styles.typeBadge,
                           {
-                            borderColor: typeBadge[schedule.type].color + "44",
+                            borderColor: typeBadge[schedule!.type].color + "44",
                           },
                         ]}
                       >
                         <Text
                           style={[
                             styles.typeBadgeText,
-                            { color: typeBadge[schedule.type].color },
+                            { color: typeBadge[schedule!.type].color },
                           ]}
                         >
-                          {typeBadge[schedule.type].label}
+                          {typeBadge[schedule!.type].label}
                         </Text>
                       </View>
                     )}

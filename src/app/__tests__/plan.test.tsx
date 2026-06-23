@@ -116,6 +116,23 @@ describe("PlanScreen", () => {
     expect(screen.getAllByText("Tap to set up this day")).toHaveLength(7);
   });
 
+  it("shows setup prompt when a gym day has no focuses", () => {
+    useWorkoutStore.setState({
+      weeklySchedule: {
+        Wed: {
+          type: "gym",
+          focuses: [],
+          exercises: [],
+        },
+      },
+    });
+
+    renderPlan();
+
+    expect(screen.getAllByText("Tap to set up this day")).toHaveLength(7);
+    expect(screen.queryByText("No focus set")).toBeNull();
+  });
+
   it("navigates to day setup when a day card is pressed", () => {
     renderPlan();
 

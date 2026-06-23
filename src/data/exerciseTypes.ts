@@ -72,6 +72,18 @@ export function getDayFocusLabel(
   return formatFocusesDisplay(schedule.focuses) || "No focus set";
 }
 
+/** Gym/home days need at least one focus; rest days count as configured. */
+export function isDayConfigured(
+  schedule?: Pick<
+    { type: string; focuses: ExerciseCategory[] },
+    "type" | "focuses"
+  > | null,
+): boolean {
+  if (!schedule) return false;
+  if (schedule.type === "rest") return true;
+  return schedule.focuses.length > 0;
+}
+
 export function toggleFocus(
   focuses: ExerciseCategory[],
   category: ExerciseCategory,

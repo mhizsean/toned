@@ -4,6 +4,7 @@ import {
   getCategoryDisplayLabel,
   getDayFocusLabel,
   getScheduleFocuses,
+  isDayConfigured,
   migrateDaySchedule,
   parseFocusCategory,
   parseFocusesFromLegacy,
@@ -63,6 +64,27 @@ describe("formatFocusesDisplay", () => {
 
   it("returns empty string when no focuses", () => {
     expect(formatFocusesDisplay([])).toBe("");
+  });
+});
+
+describe("isDayConfigured", () => {
+  it("returns false when schedule is missing", () => {
+    expect(isDayConfigured(undefined)).toBe(false);
+    expect(isDayConfigured(null)).toBe(false);
+  });
+
+  it("returns true for rest days", () => {
+    expect(isDayConfigured({ type: "rest", focuses: [] })).toBe(true);
+  });
+
+  it("returns true for gym days with focuses", () => {
+    expect(
+      isDayConfigured({ type: "gym", focuses: ["Upper Body"] }),
+    ).toBe(true);
+  });
+
+  it("returns false for gym days without focuses", () => {
+    expect(isDayConfigured({ type: "gym", focuses: [] })).toBe(false);
   });
 });
 

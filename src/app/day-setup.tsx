@@ -118,16 +118,15 @@ export default function DaySetupScreen() {
 
   const handleSave = async () => {
     if (isSaving || !scheduleLoaded) return;
-    if (!isRest && focuses.length === 0) {
-      Alert.alert(
-        "Missing Focus",
-        "Please select at least one focus for this day.",
-      );
-      return;
-    }
 
     setIsSaving(true);
     try {
+      if (!isRest && focuses.length === 0) {
+        await useWorkoutStore.getState().clearDaySchedule(day);
+        router.navigate("/plan");
+        return;
+      }
+
       await saveDaySchedule(day, {
         type,
         focuses: isRest ? [] : focuses,

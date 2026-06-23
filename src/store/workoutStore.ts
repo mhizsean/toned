@@ -13,7 +13,7 @@ import {
   resolveExerciseName,
   syncCustomExercises,
 } from '../utils/exerciseCatalogue';
-import { migrateDaySchedule } from '../data/exerciseTypes';
+import { migrateDaySchedule, isDayConfigured } from '../data/exerciseTypes';
 
 const ACTIVE_SESSION_KEY = 'toned_active_session';
 const CUSTOM_EXERCISES_KEY = 'toned_custom_exercises';
@@ -39,13 +39,16 @@ function migrateSessions(sessions: Session[]): Session[] {
 function migrateSchedule(schedule: WeeklySchedule): WeeklySchedule {
   const migrated: WeeklySchedule = {};
   for (const [day, daySchedule] of Object.entries(schedule)) {
-    migrated[day] = migrateDaySchedule(
+    const normalized = migrateDaySchedule(
       daySchedule as Parameters<typeof migrateDaySchedule>[0],
     );
-    migrated[day].exercises = daySchedule.exercises.map((ex) => ({
+    normalized.exercises = daySchedule.exercises.map((ex) => ({
       ...ex,
       name: toCanonicalName(ex.name),
     }));
+    if (isDayConfigured(normalized)) {
+      migrated[day] = normalized;
+    }
   }
   return migrated;
 }
@@ -73,6 +76,7 @@ type WorkoutStore = {
   weeklySchedule: WeeklySchedule;
   loadSchedule: () => void;
   saveDaySchedule: (day: string, schedule: DaySchedule) => Promise<void>;
+  clearDaySchedule: (day: string) => Promise<void>;
 };
 
 async function persistActiveSession(session: Session | null) {
@@ -289,12 +293,29 @@ saveDaySchedule: async (day, schedule) => {
       name: toCanonicalName(ex.name),
     })),
   };
+  if (!isDayConfigured(normalized)) {
+    await get().clearDaySchedule(day);
+    return;
+  }
   const updated = { ...weeklySchedule, [day]: normalized };
   set({ weeklySchedule: updated });
   try {
     await AsyncStorage.setItem('toned_schedule', JSON.stringify(updated));
   } catch (e) {
     console.error('Failed to save schedule', e);
+    throw e;
+  }
+},
+
+clearDaySchedule: async (day) => {
+  const { weeklySchedule } = get();
+  if (!weeklySchedule[day]) return;
+  const { [day]: _removed, ...updated } = weeklySchedule;
+  set({ weeklySchedule: updated });
+  try {
+    await AsyncStorage.setItem('toned_schedule', JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to clear day schedule', e);
     throw e;
   }
 },
