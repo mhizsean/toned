@@ -90,7 +90,7 @@ describe("getDayWorkoutSummary", () => {
       ]),
     ]);
 
-    expect(formatDaySummary(summary)).toBe("top 60s");
+    expect(formatDaySummary(summary)).toBe("top 1m");
   });
 });
 

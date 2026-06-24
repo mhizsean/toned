@@ -13,6 +13,7 @@ import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ExercisePicker from "../components/ExercisePicker";
+import DurationPickerSheet from "../components/DurationPickerSheet";
 import { useTheme } from "../context/ThemeContext";
 import { useMemo } from "react";
 import ExerciseInfoButton from "../components/ExerciseInfoButton";
@@ -21,6 +22,7 @@ import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
 import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
 import { pluralize } from "../utils/text";
 import { formatSet, getTopReps, getTopWeight } from "../utils/formatWorkout";
+import { formatDuration } from "../utils/formatDuration";
 import {
   findExercise,
   getRepInputPlaceholder,
@@ -52,6 +54,9 @@ export default function SessionScreen() {
     Record<number, { w: string; r: string }>
   >({});
   const [showPicker, setShowPicker] = useState(false);
+  const [durationPickerExIdx, setDurationPickerExIdx] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!activeSession) {
@@ -180,7 +185,7 @@ export default function SessionScreen() {
                   <Text style={s.exMeta}>
                     {ex.sets.length > 0
                       ? timed
-                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax ?? "—"}s`
+                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax != null ? formatDuration(sessionMax) : "—"}`
                         : `${pluralize(ex.sets.length, "set")} · top ${sessionMax ?? "—"}kg`
                       : "No sets yet"}
                   </Text>
@@ -233,22 +238,41 @@ export default function SessionScreen() {
                         <Text style={s.multiply}>×</Text>
                       </>
                     )}
-                    <TextInput
-                      style={[s.input, timed && s.inputWide]}
-                      placeholder={getRepInputPlaceholder(repLabel)}
-                      placeholderTextColor={colors.muted}
-                      keyboardType="numeric"
-                      value={inp.r}
-                      onChangeText={(v) =>
-                        setInputs((p) => ({
-                          ...p,
-                          [exIdx]: {
-                            ...inp,
-                            r: sanitizeIntegerInput(v),
-                          },
-                        }))
-                      }
-                    />
+                    {timed ? (
+                      <TouchableOpacity
+                        style={[s.input, s.inputWide, s.durationInput]}
+                        onPress={() => setDurationPickerExIdx(exIdx)}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            s.durationInputText,
+                            !inp.r && s.durationPlaceholder,
+                          ]}
+                        >
+                          {inp.r
+                            ? formatDuration(parseInt(inp.r, 10))
+                            : getRepInputPlaceholder(repLabel)}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TextInput
+                        style={s.input}
+                        placeholder={getRepInputPlaceholder(repLabel)}
+                        placeholderTextColor={colors.muted}
+                        keyboardType="numeric"
+                        value={inp.r}
+                        onChangeText={(v) =>
+                          setInputs((p) => ({
+                            ...p,
+                            [exIdx]: {
+                              ...inp,
+                              r: sanitizeIntegerInput(v),
+                            },
+                          }))
+                        }
+                      />
+                    )}
                     <TouchableOpacity
                       style={[s.addSetBtn, !canAddSet && s.addSetBtnDisabled]}
                       onPress={() => handleAddSet(exIdx)}
@@ -288,6 +312,27 @@ export default function SessionScreen() {
       />
 
       <ExerciseInfoSheet exerciseName={exerciseName} onClose={closeInfo} />
+
+      <DurationPickerSheet
+        visible={durationPickerExIdx != null}
+        initialSeconds={
+          durationPickerExIdx != null
+            ? parseInt(inputs[durationPickerExIdx]?.r || "0", 10)
+            : 0
+        }
+        onClose={() => setDurationPickerExIdx(null)}
+        onConfirm={(seconds) => {
+          if (durationPickerExIdx == null) return;
+          setInputs((prev) => ({
+            ...prev,
+            [durationPickerExIdx]: {
+              ...prev[durationPickerExIdx],
+              w: "",
+              r: String(seconds),
+            },
+          }));
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -407,6 +452,18 @@ function createStyles(colors: ColorScheme) {
     inputWide: {
       flex: 1,
       width: undefined,
+    },
+    durationInput: {
+      justifyContent: "center",
+    },
+    durationInputText: {
+      fontFamily: fonts.mono,
+      fontSize: 13,
+      color: colors.text,
+      textAlign: "center",
+    },
+    durationPlaceholder: {
+      color: colors.muted,
     },
     multiply: {
       color: colors.muted,

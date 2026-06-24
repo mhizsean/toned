@@ -96,7 +96,7 @@ describe("isTimedExercise", () => {
 
 describe("getRepInputPlaceholder", () => {
   it("returns the correct placeholder per rep label", () => {
-    expect(getRepInputPlaceholder("seconds")).toBe("sec");
+    expect(getRepInputPlaceholder("seconds")).toBe("Set time");
     expect(getRepInputPlaceholder("per leg")).toBe("reps/leg");
     expect(getRepInputPlaceholder(undefined)).toBe("reps");
   });
@@ -104,7 +104,7 @@ describe("getRepInputPlaceholder", () => {
 
 describe("formatRepLabel", () => {
   it("returns human-readable labels", () => {
-    expect(formatRepLabel("seconds")).toBe("Timed (sec)");
+    expect(formatRepLabel("seconds")).toBe("Timed");
     expect(formatRepLabel("per leg")).toBe("Per leg");
     expect(formatRepLabel("reps")).toBe("Reps");
   });

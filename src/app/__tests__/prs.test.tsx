@@ -108,7 +108,7 @@ describe("PRsScreen", () => {
     expect(screen.queryByText("0kg")).toBeNull();
   });
 
-  it("renders timed PRs in seconds without a secondary label", () => {
+  it("renders timed PRs as clock-style durations without a secondary label", () => {
     useWorkoutStore.setState({
       sessions: [
         {

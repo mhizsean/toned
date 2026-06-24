@@ -7,9 +7,10 @@ describe("formatSet", () => {
     expect(formatSet(100, 8, "reps")).toBe("100kg × 8");
   });
 
-  it("formats timed sets as seconds only", () => {
+  it("formats timed sets with explicit duration units", () => {
     expect(formatSet(0, 45, "seconds")).toBe("45s");
-    expect(formatSet(0, 60, "seconds")).toBe("60s");
+    expect(formatSet(0, 60, "seconds")).toBe("1m");
+    expect(formatSet(0, 600, "seconds")).toBe("10m");
   });
 
   it("formats per-leg sets with and without weight", () => {

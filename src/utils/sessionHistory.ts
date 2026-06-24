@@ -1,5 +1,6 @@
 import { Session } from "../types";
 import { findExercise, isTimedExercise } from "./exerciseCatalogue";
+import { formatDuration } from "./formatDuration";
 import { formatDate } from "../constants/storage";
 import { pluralize } from "./text";
 import { isSameCalendarDay } from "./todayWorkout";
@@ -121,7 +122,7 @@ export function formatDaySummary(summary: DayWorkoutSummary): string {
   }
 
   if (summary.allTimed && summary.topTimedSeconds != null) {
-    return `top ${summary.topTimedSeconds}s`;
+    return `top ${formatDuration(summary.topTimedSeconds)}`;
   }
 
   return `${pluralize(summary.exerciseCount, "exercise")} · ${pluralize(summary.setCount, "set")}`;

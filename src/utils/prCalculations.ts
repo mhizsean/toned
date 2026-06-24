@@ -1,6 +1,7 @@
 import { RepLabel } from "../data/exerciseTypes";
 import { findExercise } from "./exerciseCatalogue";
 import { Session, WorkoutSet } from "../types";
+import { formatDuration } from "./formatDuration";
 
 export type PersonalRecord = {
   weight: number;
@@ -70,7 +71,7 @@ export function formatPRPrimary(exerciseName: string, pr: PersonalRecord): strin
   const weight = finiteNumber(pr.weight);
 
   if (repLabel === "seconds") {
-    return reps == null ? "—" : `${reps}s`;
+    return reps == null ? "—" : formatDuration(reps);
   }
   if (weight == null || weight === 0) {
     return reps == null ? "—" : `${reps}`;

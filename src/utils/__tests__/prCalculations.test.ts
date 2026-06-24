@@ -201,7 +201,7 @@ describe("comparePRs", () => {
 });
 
 describe("formatPRPrimary", () => {
-  it("formats timed PRs as seconds", () => {
+  it("formats timed PRs as clock-style durations", () => {
     expect(
       formatPRPrimary("Jump Rope", {
         weight: 0,

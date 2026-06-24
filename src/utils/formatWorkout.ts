@@ -1,5 +1,6 @@
 import { WorkoutSet } from "../types";
 import { RepLabel } from "../data/exerciseTypes";
+import { formatDuration } from "./formatDuration";
 
 function finiteNumber(value: number | null | undefined): number | null {
   if (value == null || !Number.isFinite(value)) return null;
@@ -17,7 +18,7 @@ export function formatSet(
 
   switch (repLabel) {
     case "seconds":
-      return `${r}s`;
+      return formatDuration(r);
     case "per leg":
       return w != null && w > 0 ? `${w}kg × ${r} per leg` : `${r} per leg`;
     case "per arm":

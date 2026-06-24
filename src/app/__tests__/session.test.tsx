@@ -65,6 +65,25 @@ jest.mock("../../components/RemoveButton", () => {
   };
 });
 
+jest.mock("../../components/DurationPickerSheet", () => {
+  const React = require("react");
+  const { Text, Pressable } = require("react-native");
+  return function MockDurationPickerSheet({
+    visible,
+    onConfirm,
+  }: {
+    visible: boolean;
+    onConfirm: (seconds: number) => void;
+  }) {
+    if (!visible) return null;
+    return React.createElement(
+      Pressable,
+      { onPress: () => onConfirm(60), accessibilityLabel: "confirm-duration" },
+      React.createElement(Text, null, "DurationPicker"),
+    );
+  };
+});
+
 jest.mock("../../hooks/useExerciseInfoSheet", () => ({
   useExerciseInfoSheet: () => ({
     exerciseName: null,
@@ -379,5 +398,24 @@ describe("SessionScreen", () => {
     expect(useWorkoutStore.getState().activeSession?.exercises[0].sets).toEqual(
       [],
     );
+  });
+
+  it("logs timed sets from the duration picker", () => {
+    setActiveSession({
+      id: "1",
+      date: "2026-06-17T10:00:00.000Z",
+      exercises: [{ name: "Plank", sets: [] }],
+    });
+
+    renderSession();
+    fireEvent.press(screen.getByText("Plank"));
+    fireEvent.press(screen.getByText("Set time"));
+    fireEvent.press(screen.getByLabelText("confirm-duration"));
+    fireEvent.press(screen.getByText("+ SET"));
+
+    expect(useWorkoutStore.getState().activeSession?.exercises[0].sets).toEqual([
+      { weight: 0, reps: 60 },
+    ]);
+    expect(screen.getAllByText(/1m/).length).toBeGreaterThan(0);
   });
 });
