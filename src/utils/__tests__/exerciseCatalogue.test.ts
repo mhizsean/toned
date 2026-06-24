@@ -96,7 +96,7 @@ describe("isTimedExercise", () => {
 
 describe("getRepInputPlaceholder", () => {
   it("returns the correct placeholder per rep label", () => {
-    expect(getRepInputPlaceholder("seconds")).toBe("Set time");
+    expect(getRepInputPlaceholder("seconds")).toBe("add time");
     expect(getRepInputPlaceholder("per leg")).toBe("reps/leg");
     expect(getRepInputPlaceholder(undefined)).toBe("reps");
   });

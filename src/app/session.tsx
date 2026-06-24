@@ -6,9 +6,12 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  Keyboard,
+  Platform,
+  Dimensions,
 } from "react-native";
 import { router } from "expo-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ColorScheme, fonts } from "../constants/theme";
 import { useWorkoutStore } from "../store/workoutStore";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -48,6 +51,11 @@ export default function SessionScreen() {
   } = useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffsetY = useRef(0);
+  const inputRowRefs = useRef<Record<number, View | null>>({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [focusedExIdx, setFocusedExIdx] = useState<number | null>(null);
   const { exerciseName, openInfo, closeInfo } = useExerciseInfoSheet();
   const [expandedEx, setExpandedEx] = useState<number | null>(null);
   const [inputs, setInputs] = useState<
@@ -64,6 +72,66 @@ export default function SessionScreen() {
       return;
     }
   }, [activeSession]);
+
+  useEffect(() => {
+    setExpandedEx(null);
+    setInputs({});
+    setDurationPickerExIdx(null);
+    setShowPicker(false);
+  }, [activeSession?.id]);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      setFocusedExIdx(null);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const scrollInputIntoView = (exIdx: number) => {
+    const target = inputRowRefs.current[exIdx];
+    if (!target || keyboardHeight <= 0) return;
+
+    setTimeout(() => {
+      target.measureInWindow((_x, y, _width, height) => {
+        const windowHeight = Dimensions.get("window").height;
+        const visibleBottom = windowHeight - keyboardHeight - 16;
+        const inputBottom = y + height;
+
+        if (inputBottom > visibleBottom) {
+          scrollRef.current?.scrollTo({
+            y: scrollOffsetY.current + (inputBottom - visibleBottom),
+            animated: true,
+          });
+        }
+      });
+    }, Platform.OS === "ios" ? 50 : 100);
+  };
+
+  useEffect(() => {
+    if (focusedExIdx != null && keyboardHeight > 0) {
+      scrollInputIntoView(focusedExIdx);
+    }
+  }, [focusedExIdx, keyboardHeight]);
+
+  const handleInputFocus = (exIdx: number) => {
+    setFocusedExIdx(exIdx);
+    if (keyboardHeight > 0) {
+      scrollInputIntoView(exIdx);
+    }
+  };
 
   if (!activeSession) {
     return null;
@@ -159,7 +227,23 @@ export default function SessionScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll}>
+      <View style={s.flex}>
+        <ScrollView
+          ref={scrollRef}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          onScroll={(event) => {
+            scrollOffsetY.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          contentContainerStyle={[
+            s.scroll,
+            {
+              paddingBottom:
+                keyboardHeight > 0 ? keyboardHeight + 24 : 20,
+            },
+          ]}
+        >
         {activeSession.exercises.map((ex, exIdx) => {
           const isOpen = expandedEx === exIdx;
           const inp = inputs[exIdx] || { w: "", r: "" };
@@ -216,7 +300,12 @@ export default function SessionScreen() {
                     </View>
                   ))}
 
-                  <View style={s.inputRow}>
+                  <View
+                    ref={(node) => {
+                      inputRowRefs.current[exIdx] = node;
+                    }}
+                    style={s.inputRow}
+                  >
                     {!timed && (
                       <>
                         <TextInput
@@ -225,6 +314,7 @@ export default function SessionScreen() {
                           placeholderTextColor={colors.muted}
                           keyboardType="numeric"
                           value={inp.w}
+                          onFocus={() => handleInputFocus(exIdx)}
                           onChangeText={(v) =>
                             setInputs((p) => ({
                               ...p,
@@ -262,6 +352,7 @@ export default function SessionScreen() {
                         placeholderTextColor={colors.muted}
                         keyboardType="numeric"
                         value={inp.r}
+                        onFocus={() => handleInputFocus(exIdx)}
                         onChangeText={(v) =>
                           setInputs((p) => ({
                             ...p,
@@ -287,19 +378,24 @@ export default function SessionScreen() {
           );
         })}
 
-        <TouchableOpacity
-          style={s.addExBtn}
-          onPress={() => setShowPicker(true)}
-        >
-          <Text style={s.addExBtnText}>+ ADD EXERCISE</Text>
-        </TouchableOpacity>
+        {keyboardHeight === 0 && (
+          <>
+            <TouchableOpacity
+              style={s.addExBtn}
+              onPress={() => setShowPicker(true)}
+            >
+              <Text style={s.addExBtnText}>+ ADD EXERCISE</Text>
+            </TouchableOpacity>
 
-        {activeSession.exercises.length > 0 && (
-          <TouchableOpacity style={s.finishBtn} onPress={handleFinish}>
-            <Text style={s.finishBtnText}>FINISH SESSION ✓</Text>
-          </TouchableOpacity>
+            {activeSession.exercises.length > 0 && (
+              <TouchableOpacity style={s.finishBtn} onPress={handleFinish}>
+                <Text style={s.finishBtnText}>FINISH SESSION ✓</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
       <ExercisePicker
         visible={showPicker}
         onClose={() => setShowPicker(false)}
@@ -342,6 +438,9 @@ function createStyles(colors: ColorScheme) {
     safe: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    flex: {
+      flex: 1,
     },
     header: {
       flexDirection: "row",

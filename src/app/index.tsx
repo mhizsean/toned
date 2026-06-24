@@ -40,7 +40,7 @@ export default function HomeScreen() {
   const todayPlanComplete = isTodayPlanComplete(todayPlan, sessions);
   const doneForToday = isDoneForToday(todayPlan, sessions, finishedForTodayDate);
 
-  const handleStartSession = () => {
+  const handleStartSession = async () => {
     if (!hasLibrary) return;
     if (
       todayPlan &&
@@ -49,26 +49,26 @@ export default function HomeScreen() {
     ) {
       setShowTodayPrompt(true);
     } else {
-      startSession();
-      router.push("/session");
+      await startSession();
+      router.replace("/session");
     }
   };
 
-  const handleStartWithPlan = () => {
+  const handleStartWithPlan = async () => {
     if (!todayPlan) return;
     const exercises = todayPlan.exercises.map((ex) => ({
       name: ex.name,
       sets: [] as WorkoutSet[],
     }));
-    startSession(exercises);
+    await startSession(exercises);
     setShowTodayPrompt(false);
-    router.push("/session");
+    router.replace("/session");
   };
 
-  const handleStartBlank = () => {
-    startSession();
+  const handleStartBlank = async () => {
+    await startSession();
     setShowTodayPrompt(false);
-    router.push("/session");
+    router.replace("/session");
   };
 
   const openPlanLibrary = () => {
@@ -115,7 +115,7 @@ export default function HomeScreen() {
             </View>
             <TouchableOpacity
               style={s.resumeBtn}
-              onPress={() => router.push("/session")}
+              onPress={() => router.replace("/session")}
             >
               <Text style={s.resumeBtnText}>RESUME →</Text>
             </TouchableOpacity>

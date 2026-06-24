@@ -41,11 +41,13 @@ function AppLayout() {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
       loadCustomExercises();
-      loadSessions();
-      loadActiveSession();
-      loadFinishedForToday();
       loadLibrary();
       loadSchedule();
+      void (async () => {
+        await loadSessions();
+        await loadActiveSession();
+        await loadFinishedForToday();
+      })();
     }
   }, [fontsLoaded]);
 

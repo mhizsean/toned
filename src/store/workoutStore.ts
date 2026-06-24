@@ -61,7 +61,7 @@ type WorkoutStore = {
   activeSession: Session | null;
   finishedForTodayDate: string | null;
   scheduleLoaded: boolean;
-  startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => void;
+  startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => Promise<void>;
   addExercise: (name: string) => void;
   addSet: (exIndex: number, set: WorkoutSet) => void;
   removeSet: (exIndex: number, setIndex: number) => void;
@@ -109,6 +109,36 @@ function reconcileFinishedForToday(
   return null;
 }
 
+function reconcileActiveSession(
+  activeSession: Session | null,
+  sessions: Session[],
+): Session | null {
+  if (!activeSession) return null;
+  if (sessions.some((session) => session.id === activeSession.id)) return null;
+  return activeSession;
+}
+
+async function readPersistedActiveSession(): Promise<Session | null> {
+  try {
+    const data = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
+    return data ? migrateSession(JSON.parse(data)) : null;
+  } catch (e) {
+    console.error('Failed to read active session', e);
+    return null;
+  }
+}
+
+function shouldClearActiveForDayReset(
+  session: Session,
+  dayKey: string,
+  deletedIds: Set<string>,
+  resetDayCompletely: boolean,
+): boolean {
+  if (resetDayCompletely) return true;
+  if (deletedIds.has(session.id)) return true;
+  return getCalendarDayKey(session.date) === dayKey;
+}
+
 async function clearFinishedForTodayState() {
   await AsyncStorage.removeItem(FINISHED_FOR_TODAY_KEY);
 }
@@ -132,9 +162,14 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
       const flag =
         flagData && isFinishedForToday(flagData) ? flagData : null;
       const reconciled = reconcileFinishedForToday(sessions, flag);
-      set({ sessions, finishedForTodayDate: reconciled });
+      const previousActive = get().activeSession;
+      const activeSession = reconcileActiveSession(previousActive, sessions);
+      set({ sessions, finishedForTodayDate: reconciled, activeSession });
       if (flag && !reconciled) {
         await clearFinishedForTodayState();
+      }
+      if (previousActive !== activeSession) {
+        await persistActiveSession(activeSession);
       }
     } catch (e) {
       console.error('Failed to load sessions', e);
@@ -143,10 +178,20 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
   loadActiveSession: async () => {
     try {
+      const { sessions, activeSession: current } = get();
       const data = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
-      if (data) {
-        const activeSession = migrateSession(JSON.parse(data));
-        set({ activeSession });
+      if (!data) return;
+
+      const loaded = migrateSession(JSON.parse(data));
+      const reconciled = reconcileActiveSession(loaded, sessions);
+
+      if (current && reconciled && current.id !== reconciled.id) {
+        return;
+      }
+
+      set({ activeSession: reconciled });
+      if (!reconciled) {
+        await persistActiveSession(null);
       }
     } catch (e) {
       console.error('Failed to load active session', e);
@@ -176,7 +221,7 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     }
   },
 
-  startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
+  startSession: async (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
     const session: Session = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
@@ -185,8 +230,8 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
         : [],
     };
     set({ activeSession: session, finishedForTodayDate: null });
-    persistActiveSession(session);
-    AsyncStorage.removeItem(FINISHED_FOR_TODAY_KEY).catch((e) => {
+    await persistActiveSession(session);
+    await AsyncStorage.removeItem(FINISHED_FOR_TODAY_KEY).catch((e) => {
       console.error('Failed to clear finished-for-today state', e);
     });
   },
@@ -251,27 +296,48 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   },
 
   deleteSessionsForDay: async (dayKey: string) => {
-    const { sessions, finishedForTodayDate } = get();
+    const { sessions, finishedForTodayDate, activeSession } = get();
     const sessionsForDay = sessions.filter(
       (session) => getCalendarDayKey(session.date) === dayKey,
     );
-    if (!sessionsForDay.length) return;
+    const deletedIds = new Set(sessionsForDay.map((session) => session.id));
+    const shouldClearFinishedForToday =
+      finishedForTodayDate != null &&
+      getCalendarDayKey(finishedForTodayDate) === dayKey;
+    const resetDayCompletely = shouldClearFinishedForToday;
+    const storedActive = await readPersistedActiveSession();
+    const shouldWipeActive =
+      resetDayCompletely ||
+      [activeSession, storedActive].some(
+        (session) =>
+          session != null &&
+          shouldClearActiveForDayReset(session, dayKey, deletedIds, false),
+      );
+
+    if (!sessionsForDay.length && !shouldClearFinishedForToday && !shouldWipeActive) {
+      return;
+    }
 
     const updated = sessions.filter(
       (session) => getCalendarDayKey(session.date) !== dayKey,
     );
-    const shouldClearFinishedForToday =
-      finishedForTodayDate != null &&
-      getCalendarDayKey(finishedForTodayDate) === dayKey;
+
+    set({
+      sessions: updated,
+      ...(shouldClearFinishedForToday ? { finishedForTodayDate: null } : {}),
+      ...(shouldWipeActive ? { activeSession: null } : {}),
+    });
 
     if (shouldClearFinishedForToday) {
-      set({ sessions: updated, finishedForTodayDate: null });
       await clearFinishedForTodayState();
-    } else {
-      set({ sessions: updated });
+    }
+    if (shouldWipeActive) {
+      await persistActiveSession(null);
     }
 
-    await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
+    if (sessionsForDay.length) {
+      await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
+    }
   },
 
   deleteSession: async (id: string) => {

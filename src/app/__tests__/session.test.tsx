@@ -1,10 +1,4 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  jest,
-} from "@jest/globals";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import React from "react";
 import { Alert } from "react-native";
 import { render, screen, fireEvent, act } from "@testing-library/react-native";
@@ -12,8 +6,14 @@ import { router } from "expo-router";
 import SessionScreen from "../session";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { confirmDestructive } from "../../utils/alerts";
 import { Session } from "../../types";
+
+const TEST_SAFE_AREA = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 jest.mock("expo-router", () => ({
   router: {
@@ -94,9 +94,11 @@ jest.mock("../../hooks/useExerciseInfoSheet", () => ({
 
 function renderSession() {
   return render(
-    <ThemeProvider>
-      <SessionScreen />
-    </ThemeProvider>,
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA}>
+      <ThemeProvider>
+        <SessionScreen />
+      </ThemeProvider>
+    </SafeAreaProvider>,
   );
 }
 
@@ -409,13 +411,13 @@ describe("SessionScreen", () => {
 
     renderSession();
     fireEvent.press(screen.getByText("Plank"));
-    fireEvent.press(screen.getByText("Set time"));
+    fireEvent.press(screen.getByText("add time"));
     fireEvent.press(screen.getByLabelText("confirm-duration"));
     fireEvent.press(screen.getByText("+ SET"));
 
-    expect(useWorkoutStore.getState().activeSession?.exercises[0].sets).toEqual([
-      { weight: 0, reps: 60 },
-    ]);
+    expect(useWorkoutStore.getState().activeSession?.exercises[0].sets).toEqual(
+      [{ weight: 0, reps: 60 }],
+    );
     expect(screen.getAllByText(/1m/).length).toBeGreaterThan(0);
   });
 });

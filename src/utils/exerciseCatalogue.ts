@@ -270,7 +270,7 @@ export function isTimedExercise(exercise: ExerciseInfo | undefined): boolean {
 export function getRepInputPlaceholder(repLabel: RepLabel | undefined): string {
   switch (repLabel) {
     case "seconds":
-      return "Set time";
+      return "add time";
     case "per leg":
       return "reps/leg";
     case "per arm":

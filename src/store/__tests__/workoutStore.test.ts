@@ -222,6 +222,124 @@ describe("workoutStore", () => {
       expect(useWorkoutStore.getState().finishedForTodayDate).toBeNull();
       expect(await AsyncStorage.getItem(FINISHED_FOR_TODAY_KEY)).toBeNull();
     });
+
+    it("clears an in-progress active session when deleting that day", async () => {
+      const activeSession = {
+        id: "active-1",
+        date: "2026-06-17T12:00:00.000Z",
+        exercises: [{ name: "Push-Up", sets: [] }],
+      };
+      useWorkoutStore.setState({
+        sessions: [
+          {
+            id: "1",
+            date: "2026-06-17T08:00:00.000Z",
+            exercises: [{ name: "Bench Press (Barbell)", sets: [{ weight: 60, reps: 8 }] }],
+          },
+        ],
+        activeSession,
+      });
+      await AsyncStorage.setItem(
+        ACTIVE_SESSION_KEY,
+        JSON.stringify(activeSession),
+      );
+
+      await useWorkoutStore.getState().deleteSessionsForDay("2026-06-17");
+
+      expect(useWorkoutStore.getState().sessions).toEqual([]);
+      expect(useWorkoutStore.getState().activeSession).toBeNull();
+      expect(await AsyncStorage.getItem(ACTIVE_SESSION_KEY)).toBeNull();
+    });
+
+    it("does not clear an active session from a different day", async () => {
+      const activeSession = {
+        id: "active-1",
+        date: "2026-06-18T12:00:00.000Z",
+        exercises: [{ name: "Push-Up", sets: [] }],
+      };
+      useWorkoutStore.setState({
+        sessions: [
+          { id: "1", date: "2026-06-17T08:00:00.000Z", exercises: [] },
+        ],
+        activeSession,
+      });
+
+      await useWorkoutStore.getState().deleteSessionsForDay("2026-06-17");
+
+      expect(useWorkoutStore.getState().sessions).toEqual([]);
+      expect(useWorkoutStore.getState().activeSession).toEqual(activeSession);
+    });
+
+    it("clears stale persisted active session when resetting today via delete", async () => {
+      const staleActive = {
+        id: "old-active",
+        date: "2026-06-17T10:00:00.000Z",
+        exercises: [{ name: "Push-Up", sets: [{ weight: 0, reps: 12 }] }],
+      };
+      useWorkoutStore.setState({
+        sessions: [
+          {
+            id: "1",
+            date: "2026-06-17T12:00:00.000Z",
+            exercises: [{ name: "Bench Press (Barbell)", sets: [{ weight: 60, reps: 8 }] }],
+          },
+        ],
+        activeSession: null,
+        finishedForTodayDate: "2026-06-17T10:00:00.000Z",
+      });
+      await AsyncStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(staleActive));
+
+      await useWorkoutStore.getState().deleteSessionsForDay("2026-06-17");
+
+      expect(useWorkoutStore.getState().activeSession).toBeNull();
+      expect(await AsyncStorage.getItem(ACTIVE_SESSION_KEY)).toBeNull();
+    });
+
+    it("starts a fresh session after deleting today's workout", async () => {
+      const staleActive = {
+        id: "old-active",
+        date: "2026-06-17T10:00:00.000Z",
+        exercises: [{ name: "Push-Up", sets: [{ weight: 0, reps: 12 }] }],
+      };
+      useWorkoutStore.setState({
+        sessions: [
+          {
+            id: "1",
+            date: "2026-06-17T12:00:00.000Z",
+            exercises: [{ name: "Bench Press (Barbell)", sets: [{ weight: 60, reps: 8 }] }],
+          },
+        ],
+        activeSession: null,
+        finishedForTodayDate: "2026-06-17T10:00:00.000Z",
+      });
+      await AsyncStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(staleActive));
+
+      await useWorkoutStore.getState().deleteSessionsForDay("2026-06-17");
+      await useWorkoutStore.getState().startSession();
+
+      const { activeSession } = useWorkoutStore.getState();
+      expect(activeSession?.id).toBe("1700000000000");
+      expect(activeSession?.exercises).toEqual([]);
+      const stored = JSON.parse((await AsyncStorage.getItem(ACTIVE_SESSION_KEY))!);
+      expect(stored.id).toBe("1700000000000");
+      expect(stored.exercises).toEqual([]);
+    });
+
+    it("drops a stale active session when it was already saved to history", async () => {
+      const completed = {
+        id: "session-1",
+        date: "2026-06-17T10:00:00.000Z",
+        exercises: [{ name: "Push-Up", sets: [{ weight: 0, reps: 12 }] }],
+      };
+      await AsyncStorage.setItem("toned_sessions", JSON.stringify([completed]));
+      await AsyncStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(completed));
+
+      await useWorkoutStore.getState().loadSessions();
+      await useWorkoutStore.getState().loadActiveSession();
+
+      expect(useWorkoutStore.getState().activeSession).toBeNull();
+      expect(await AsyncStorage.getItem(ACTIVE_SESSION_KEY)).toBeNull();
+    });
   });
 
   describe("library", () => {

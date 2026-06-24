@@ -7,13 +7,14 @@ import {
   jest,
 } from "@jest/globals";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react-native";
+import { render, screen, fireEvent, act } from "@testing-library/react-native";
 import { router } from "expo-router";
 import HomeScreen from "../index";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { getCalendarDayKey } from "../../utils/sessionHistory";
+import { Session } from "../../types";
 
 jest.mock("expo-router", () => {
   const React = require("react");
@@ -80,6 +81,12 @@ const TEST_SAFE_AREA = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
+
+async function flushPromises() {
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
 
 function renderHome() {
   return render(
@@ -185,7 +192,7 @@ describe("HomeScreen", () => {
     expect(screen.queryByText("＋ START WORKOUT")).toBeNull();
 
     fireEvent.press(screen.getByText("RESUME →"));
-    expect(router.push).toHaveBeenCalledWith("/session");
+    expect(router.replace).toHaveBeenCalledWith("/session");
   });
 
   it("shows done for today when the user finished for today", () => {
@@ -295,16 +302,17 @@ describe("HomeScreen", () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it("starts a blank session when there is no today plan", () => {
+  it("starts a blank session when there is no today plan", async () => {
     renderHome();
     fireEvent.press(screen.getByText("＋ START WORKOUT"));
+    await flushPromises();
 
     expect(screen.queryByText("TodayPlanSheet")).toBeNull();
     expect(useWorkoutStore.getState().activeSession).not.toBeNull();
-    expect(router.push).toHaveBeenCalledWith("/session");
+    expect(router.replace).toHaveBeenCalledWith("/session");
   });
 
-  it("starts with today plan exercises from the sheet", () => {
+  it("starts with today plan exercises from the sheet", async () => {
     useWorkoutStore.setState({
       weeklySchedule: {
         Wed: {
@@ -318,14 +326,15 @@ describe("HomeScreen", () => {
     renderHome();
     fireEvent.press(screen.getByText("＋ START WORKOUT"));
     fireEvent.press(screen.getByText("Start with plan"));
+    await flushPromises();
 
     const { activeSession } = useWorkoutStore.getState();
     expect(activeSession?.exercises).toEqual([{ name: "Push-Up", sets: [] }]);
-    expect(router.push).toHaveBeenCalledWith("/session");
+    expect(router.replace).toHaveBeenCalledWith("/session");
     expect(screen.queryByText("TodayPlanSheet")).toBeNull();
   });
 
-  it("starts a blank session from the today plan sheet", () => {
+  it("starts a blank session from the today plan sheet", async () => {
     useWorkoutStore.setState({
       weeklySchedule: {
         Wed: {
@@ -339,9 +348,10 @@ describe("HomeScreen", () => {
     renderHome();
     fireEvent.press(screen.getByText("＋ START WORKOUT"));
     fireEvent.press(screen.getByText("Start blank"));
+    await flushPromises();
 
     expect(useWorkoutStore.getState().activeSession?.exercises).toEqual([]);
-    expect(router.push).toHaveBeenCalledWith("/session");
+    expect(router.replace).toHaveBeenCalledWith("/session");
   });
 
   it("navigates to history when a recent session is tapped", () => {
