@@ -20,13 +20,19 @@ import RemoveButton from "../components/RemoveButton";
 import ExerciseInfoSheet from "../components/ExerciseInfoSheet";
 import { useExerciseInfoSheet } from "../hooks/useExerciseInfoSheet";
 import { pluralize } from "../utils/text";
-import { formatSet, getTopWeight } from "../utils/formatWorkout";
+import { formatSet, getTopReps, getTopWeight } from "../utils/formatWorkout";
 import {
   findExercise,
   getRepInputPlaceholder,
   isTimedExercise,
 } from "../utils/exerciseCatalogue";
 import { confirmDestructive } from "../utils/alerts";
+import {
+  isValidSetInputs,
+  parseSetInputs,
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from "../utils/setInput";
 
 export default function SessionScreen() {
   const {
@@ -61,13 +67,10 @@ export default function SessionScreen() {
   const handleAddSet = (exIdx: number) => {
     const exerciseInfo = findExercise(activeSession.exercises[exIdx].name);
     const timed = isTimedExercise(exerciseInfo);
-    const { w, r } = inputs[exIdx] || {};
-    if (!r) return;
-    if (!timed && !w) return;
-    addSet(exIdx, {
-      weight: timed ? 0 : parseFloat(w),
-      reps: parseInt(r),
-    });
+    const { w = "", r = "" } = inputs[exIdx] || {};
+    const set = parseSetInputs(w, r, timed);
+    if (!set) return;
+    addSet(exIdx, set);
     setInputs((prev) => ({ ...prev, [exIdx]: { w: "", r: "" } }));
   };
 
@@ -164,10 +167,9 @@ export default function SessionScreen() {
           const timed = isTimedExercise(exerciseInfo);
           const repLabel = exerciseInfo?.repLabel;
           const sessionMax = timed
-            ? ex.sets.length
-              ? Math.max(...ex.sets.map((set) => set.reps))
-              : null
+            ? getTopReps(ex.sets)
             : getTopWeight(ex.sets);
+          const canAddSet = isValidSetInputs(inp.w, inp.r, timed);
 
           return (
             <View
@@ -183,8 +185,8 @@ export default function SessionScreen() {
                   <Text style={s.exMeta}>
                     {ex.sets.length > 0
                       ? timed
-                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax}s`
-                        : `${pluralize(ex.sets.length, "set")} · top ${sessionMax}kg`
+                        ? `${pluralize(ex.sets.length, "set")} · top ${sessionMax ?? "—"}s`
+                        : `${pluralize(ex.sets.length, "set")} · top ${sessionMax ?? "—"}kg`
                       : "No sets yet"}
                   </Text>
                 </TouchableOpacity>
@@ -226,7 +228,10 @@ export default function SessionScreen() {
                           onChangeText={(v) =>
                             setInputs((p) => ({
                               ...p,
-                              [exIdx]: { ...p[exIdx], w: v },
+                              [exIdx]: {
+                                ...inp,
+                                w: sanitizeDecimalInput(v),
+                              },
                             }))
                           }
                         />
@@ -242,13 +247,17 @@ export default function SessionScreen() {
                       onChangeText={(v) =>
                         setInputs((p) => ({
                           ...p,
-                          [exIdx]: { ...p[exIdx], r: v },
+                          [exIdx]: {
+                            ...inp,
+                            r: sanitizeIntegerInput(v),
+                          },
                         }))
                       }
                     />
                     <TouchableOpacity
-                      style={s.addSetBtn}
+                      style={[s.addSetBtn, !canAddSet && s.addSetBtnDisabled]}
                       onPress={() => handleAddSet(exIdx)}
+                      disabled={!canAddSet}
                     >
                       <Text style={s.addSetBtnText}>+ SET</Text>
                     </TouchableOpacity>
@@ -414,6 +423,9 @@ function createStyles(colors: ColorScheme) {
       borderRadius: 6,
       padding: 10,
       alignItems: "center",
+    },
+    addSetBtnDisabled: {
+      opacity: 0.4,
     },
     addSetBtnText: {
       fontFamily: fonts.display,

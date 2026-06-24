@@ -150,8 +150,12 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   addSet: (exIndex, workoutSet) => {
     const { activeSession } = get();
     if (!activeSession) return;
+    const reps = Number.isFinite(workoutSet.reps) ? workoutSet.reps : NaN;
+    const weight = Number.isFinite(workoutSet.weight) ? workoutSet.weight : NaN;
+    if (!Number.isFinite(reps) || reps <= 0) return;
+    if (!Number.isFinite(weight) || weight < 0) return;
     const exercises = activeSession.exercises.map((ex, i) =>
-      i !== exIndex ? ex : { ...ex, sets: [...ex.sets, workoutSet] }
+      i !== exIndex ? ex : { ...ex, sets: [...ex.sets, { weight, reps }] }
     );
     const next = { ...activeSession, exercises };
     set({ activeSession: next });

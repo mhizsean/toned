@@ -287,4 +287,45 @@ describe("SessionScreen", () => {
 
     expect(screen.getByText(/0kg × 12/)).toBeTruthy();
   });
+
+  it("does not add a set when inputs are incomplete", () => {
+    setActiveSession({
+      id: "1",
+      date: "2026-06-17T10:00:00.000Z",
+      exercises: [{ name: "Hip Thrust (Barbell)", sets: [] }],
+    });
+
+    renderSession();
+    fireEvent.press(screen.getByText("Hip Thrust (Barbell)"));
+
+    const kgInput = screen.getByPlaceholderText("kg");
+    const repsInput = screen.getByPlaceholderText("reps");
+
+    fireEvent.changeText(kgInput, ".");
+    fireEvent.changeText(repsInput, "5");
+    fireEvent.press(screen.getByText("+ SET"));
+
+    expect(useWorkoutStore.getState().activeSession?.exercises[0].sets).toEqual(
+      [],
+    );
+  });
+
+  it("does not add a set when reps are zero", () => {
+    setActiveSession({
+      id: "1",
+      date: "2026-06-17T10:00:00.000Z",
+      exercises: [{ name: "Bulgarian Split Squat", sets: [] }],
+    });
+
+    renderSession();
+    fireEvent.press(screen.getByText("Bulgarian Split Squat"));
+
+    fireEvent.changeText(screen.getByPlaceholderText("kg"), "20");
+    fireEvent.changeText(screen.getByPlaceholderText("reps/leg"), "0");
+    fireEvent.press(screen.getByText("+ SET"));
+
+    expect(useWorkoutStore.getState().activeSession?.exercises[0].sets).toEqual(
+      [],
+    );
+  });
 });

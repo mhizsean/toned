@@ -9,6 +9,19 @@ export type PersonalRecord = {
   repLabel?: RepLabel;
 };
 
+function finiteNumber(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return value;
+}
+
+function isValidSet(set: WorkoutSet): boolean {
+  const reps = finiteNumber(set.reps);
+  const weight = finiteNumber(set.weight);
+  if (reps == null || reps <= 0) return false;
+  if (weight == null || weight < 0) return false;
+  return true;
+}
+
 function getRepLabel(exerciseName: string): RepLabel | undefined {
   return findExercise(exerciseName)?.repLabel;
 }
@@ -18,6 +31,8 @@ function isBetterSet(
   set: WorkoutSet,
   current: PersonalRecord | undefined,
 ): boolean {
+  if (!isValidSet(set)) return false;
+
   const repLabel = getRepLabel(exerciseName);
 
   if (repLabel === "seconds") {
@@ -51,10 +66,16 @@ export function comparePRs(
 
 export function formatPRPrimary(exerciseName: string, pr: PersonalRecord): string {
   const repLabel = pr.repLabel ?? getRepLabel(exerciseName);
+  const reps = finiteNumber(pr.reps);
+  const weight = finiteNumber(pr.weight);
 
-  if (repLabel === "seconds") return `${pr.reps}s`;
-  if (pr.weight === 0) return `${pr.reps}`;
-  return `${pr.weight}kg`;
+  if (repLabel === "seconds") {
+    return reps == null ? "—" : `${reps}s`;
+  }
+  if (weight == null || weight === 0) {
+    return reps == null ? "—" : `${reps}`;
+  }
+  return `${weight}kg`;
 }
 
 export function formatPRSecondary(
@@ -62,16 +83,19 @@ export function formatPRSecondary(
   pr: PersonalRecord,
 ): string | null {
   const repLabel = pr.repLabel ?? getRepLabel(exerciseName);
+  const reps = finiteNumber(pr.reps);
+  const weight = finiteNumber(pr.weight);
 
   if (repLabel === "seconds") return null;
-  if (pr.weight === 0) {
+  if (weight == null || weight === 0) {
     if (repLabel && repLabel !== "reps") return repLabel;
     return "reps";
   }
-  if (repLabel === "per leg") return `${pr.reps} per leg`;
-  if (repLabel === "per arm") return `${pr.reps} per arm`;
-  if (repLabel === "per side") return `${pr.reps} per side`;
-  return `${pr.reps} reps`;
+  if (reps == null) return null;
+  if (repLabel === "per leg") return `${reps} per leg`;
+  if (repLabel === "per arm") return `${reps} per arm`;
+  if (repLabel === "per side") return `${reps} per side`;
+  return `${reps} reps`;
 }
 
 export function calculatePRs(

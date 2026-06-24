@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { formatSet, getTopWeight } from "../formatWorkout";
+import { formatSet, getTopReps, getTopWeight } from "../formatWorkout";
 
 describe("formatSet", () => {
   it("formats standard weighted sets as kg × reps", () => {
@@ -31,6 +31,13 @@ describe("formatSet", () => {
     const perLeg = formatSet(60, 10, "per leg");
     expect(perLeg).not.toMatch(/reps$/);
     expect(perLeg).toBe("60kg × 10 per leg");
+  });
+
+  it("handles invalid stored values without showing null or NaN", () => {
+    expect(formatSet(NaN, 10, "per leg")).toBe("10 per leg");
+    expect(formatSet(60, NaN, "per leg")).toBe("—");
+    expect(formatSet(null as unknown as number, 8, "per leg")).toBe("8 per leg");
+    expect(formatSet(100, null as unknown as number)).toBe("—");
   });
 });
 
@@ -65,5 +72,39 @@ describe("getTopWeight", () => {
         { weight: 0, reps: 20 },
       ]),
     ).toBe(0);
+  });
+
+  it("ignores invalid weights when calculating top weight", () => {
+    expect(
+      getTopWeight([
+        { weight: NaN, reps: 10 },
+        { weight: 60, reps: 8 },
+        { weight: null as unknown as number, reps: 6 },
+      ]),
+    ).toBe(60);
+  });
+});
+
+describe("getTopReps", () => {
+  it("returns null for an empty set list", () => {
+    expect(getTopReps([])).toBeNull();
+  });
+
+  it("returns the highest rep count logged", () => {
+    expect(
+      getTopReps([
+        { weight: 0, reps: 45 },
+        { weight: 0, reps: 60 },
+      ]),
+    ).toBe(60);
+  });
+
+  it("ignores invalid reps", () => {
+    expect(
+      getTopReps([
+        { weight: 0, reps: NaN },
+        { weight: 0, reps: 30 },
+      ]),
+    ).toBe(30);
   });
 });

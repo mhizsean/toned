@@ -140,6 +140,30 @@ describe("calculatePRs", () => {
     expect(prs["Hip Thrust (Barbell)"].weight).toBe(100);
     expect(prs["Push-Up"].reps).toBe(15);
   });
+
+  it("ignores sets with invalid weight or reps", () => {
+    const sessions = [
+      makeSession("1", "2026-06-01", [
+        {
+          name: "Bulgarian Split Squat",
+          sets: [
+            { weight: NaN, reps: 10 },
+            { weight: 20, reps: NaN },
+            { weight: 40, reps: 8 },
+          ],
+        },
+      ]),
+    ];
+
+    const prs = calculatePRs(sessions);
+
+    expect(prs["Bulgarian Split Squat"]).toEqual({
+      weight: 40,
+      reps: 8,
+      date: "2026-06-01",
+      repLabel: "per leg",
+    });
+  });
 });
 
 describe("comparePRs", () => {

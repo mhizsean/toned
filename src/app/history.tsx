@@ -14,7 +14,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useLocalSearchParams } from "expo-router";
 import DeleteIconButton from "../components/DeleteIconButton";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
-import { formatSet } from "../utils/formatWorkout";
+import { formatSet, getTopWeight } from "../utils/formatWorkout";
 import { findExercise } from "../utils/exerciseCatalogue";
 import { useTabBarInset } from "../hooks/useTabBarInset";
 
@@ -42,13 +42,11 @@ export default function HistoryScreen() {
   }
 
   const sessionItems = sessions.map((session) => {
-    const weights = session.exercises.flatMap((ex) =>
-      ex.sets.map((s) => s.weight),
-    );
+    const allSets = session.exercises.flatMap((ex) => ex.sets);
     return {
       session,
       isOpen: expanded === session.id,
-      topWeight: weights.length ? Math.max(...weights) : 0,
+      topWeight: getTopWeight(allSets) ?? 0,
     };
   });
 
