@@ -128,13 +128,25 @@ describe("HistoryScreen", () => {
   });
 
   it("renders day count and exercise tags", () => {
-    useWorkoutStore.setState({ sessions: [SESSION] });
+    useWorkoutStore.setState({
+      sessions: [
+        {
+          id: "session-weighted",
+          date: "2026-06-17T10:00:00.000Z",
+          exercises: [
+            {
+              name: "Hip Thrust (Barbell)",
+              sets: [{ weight: 100, reps: 8 }],
+            },
+          ],
+        },
+      ],
+    });
 
     renderHistory();
 
     expect(screen.getByText("HISTORY")).toBeTruthy();
     expect(screen.getByText("1 DAY LOGGED")).toBeTruthy();
-    expect(screen.getByText("Push-Up")).toBeTruthy();
     expect(screen.getByText("Hip Thrust (Barbell)")).toBeTruthy();
     expect(screen.getByText("top 100kg")).toBeTruthy();
   });
@@ -155,7 +167,20 @@ describe("HistoryScreen", () => {
 
     expect(screen.getByText("1 DAY LOGGED")).toBeTruthy();
     expect(screen.getByText("2 sessions")).toBeTruthy();
+    expect(screen.getByText("3 exercises · 4 sets")).toBeTruthy();
     expect(screen.getByText("Plank")).toBeTruthy();
+  });
+
+  it("shows tags when collapsed and set details when expanded", () => {
+    useWorkoutStore.setState({ sessions: [SESSION] });
+
+    renderHistory();
+
+    expect(screen.getByText("Hip Thrust (Barbell)")).toBeTruthy();
+    expect(screen.queryByText(/100kg × 8/)).toBeNull();
+
+    fireEvent.press(screen.getByText("TODAY"));
+    expect(screen.getByText(/100kg × 8/)).toBeTruthy();
   });
 
   it("auto-expands a day from the expand route param", () => {
@@ -166,8 +191,8 @@ describe("HistoryScreen", () => {
 
     renderHistory();
 
-    expect(screen.getByText("0kg × 12")).toBeTruthy();
-    expect(screen.getByText("100kg × 8")).toBeTruthy();
+    expect(screen.getByText(/0kg × 12/)).toBeTruthy();
+    expect(screen.getByText(/100kg × 8/)).toBeTruthy();
   });
 
   it("expands and collapses a day when the card is pressed", () => {
@@ -175,13 +200,13 @@ describe("HistoryScreen", () => {
 
     renderHistory();
 
-    expect(screen.queryByText("0kg × 12")).toBeNull();
+    expect(screen.queryByText(/0kg × 12/)).toBeNull();
 
-    fireEvent.press(screen.getByText("WED, 17 JUN 2026"));
-    expect(screen.getByText("0kg × 12")).toBeTruthy();
+    fireEvent.press(screen.getByText("TODAY"));
+    expect(screen.getByText(/0kg × 12/)).toBeTruthy();
 
-    fireEvent.press(screen.getByText("WED, 17 JUN 2026"));
-    expect(screen.queryByText("0kg × 12")).toBeNull();
+    fireEvent.press(screen.getByText("TODAY"));
+    expect(screen.queryByText(/0kg × 12/)).toBeNull();
   });
 
   it("formats sets without an extra reps suffix", () => {
@@ -205,7 +230,7 @@ describe("HistoryScreen", () => {
     });
     renderHistory();
 
-    expect(screen.getByText("20kg × 10 per leg")).toBeTruthy();
+    expect(screen.getByText(/20kg × 10 per leg/)).toBeTruthy();
     expect(screen.queryByText(/per leg reps/)).toBeNull();
   });
 

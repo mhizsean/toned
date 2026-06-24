@@ -2,6 +2,9 @@ import { describe, it, expect } from "@jest/globals";
 import { Session } from "../../types";
 import {
   getCalendarDayKey,
+  getDayWorkoutSummary,
+  formatDaySummary,
+  formatHistoryDayLabel,
   getUniqueExerciseNames,
   groupSessionsByDay,
 } from "../sessionHistory";
@@ -51,5 +54,58 @@ describe("getUniqueExerciseNames", () => {
     ]);
 
     expect(names).toEqual(["Push-Up", "Plank", "Hip Thrust (Barbell)"]);
+  });
+});
+
+describe("getDayWorkoutSummary", () => {
+  it("returns top weight for all-weighted days", () => {
+    const summary = getDayWorkoutSummary([
+      makeSession("1", "2026-06-17T08:00:00.000Z", [
+        { name: "Hip Thrust (Barbell)", sets: [{ weight: 100, reps: 8 }] },
+      ]),
+    ]);
+
+    expect(formatDaySummary(summary)).toBe("top 100kg");
+  });
+
+  it("returns exercise and set counts for mixed workouts", () => {
+    const summary = getDayWorkoutSummary([
+      makeSession("1", "2026-06-17T08:00:00.000Z", [
+        { name: "Plank", sets: [{ weight: 0, reps: 60 }] },
+        { name: "Face Pull (Cable)", sets: [{ weight: 10, reps: 10 }] },
+        { name: "Dead Bug", sets: [{ weight: 10, reps: 10 }] },
+      ]),
+    ]);
+
+    expect(summary.exerciseCount).toBe(3);
+    expect(summary.setCount).toBe(3);
+    expect(formatDaySummary(summary)).toBe("3 exercises · 3 sets");
+  });
+
+  it("returns top seconds for all-timed days", () => {
+    const summary = getDayWorkoutSummary([
+      makeSession("1", "2026-06-17T08:00:00.000Z", [
+        { name: "Plank", sets: [{ weight: 0, reps: 45 }] },
+        { name: "Wall Sit", sets: [{ weight: 0, reps: 60 }] },
+      ]),
+    ]);
+
+    expect(formatDaySummary(summary)).toBe("top 60s");
+  });
+});
+
+describe("formatHistoryDayLabel", () => {
+  it("labels the current day as TODAY", () => {
+    const ref = new Date(2026, 5, 17, 12, 0, 0);
+    expect(
+      formatHistoryDayLabel("2026-06-17T10:00:00.000Z", ref),
+    ).toBe("TODAY");
+  });
+
+  it("labels the previous day as YESTERDAY", () => {
+    const ref = new Date(2026, 5, 17, 12, 0, 0);
+    expect(
+      formatHistoryDayLabel("2026-06-16T10:00:00.000Z", ref),
+    ).toBe("YESTERDAY");
   });
 });

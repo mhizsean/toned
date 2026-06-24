@@ -9,15 +9,17 @@ import { ColorScheme, fonts } from "../constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkoutStore } from "../store/workoutStore";
 import { useEffect, useMemo, useState } from "react";
-import { formatDate } from "../constants/storage";
 import { useTheme } from "../context/ThemeContext";
 import { useLocalSearchParams } from "expo-router";
 import DeleteIconButton from "../components/DeleteIconButton";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
-import { formatSet, getTopWeight } from "../utils/formatWorkout";
+import { formatSet } from "../utils/formatWorkout";
 import { findExercise } from "../utils/exerciseCatalogue";
 import { useTabBarInset } from "../hooks/useTabBarInset";
 import {
+  formatDaySummary,
+  formatHistoryDayLabel,
+  getDayWorkoutSummary,
   getUniqueExerciseNames,
   groupSessionsByDay,
 } from "../utils/sessionHistory";
@@ -59,10 +61,7 @@ export default function HistoryScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: tabBarInset }}>
         {dayGroups.map((day) => {
           const isOpen = expandedDay === day.dayKey;
-          const allSets = day.sessions.flatMap((session) =>
-            session.exercises.flatMap((exercise) => exercise.sets),
-          );
-          const topWeight = getTopWeight(allSets) ?? 0;
+          const summary = getDayWorkoutSummary(day.sessions);
           const exerciseNames = getUniqueExerciseNames(day.sessions);
 
           return (
@@ -73,8 +72,11 @@ export default function HistoryScreen() {
               activeOpacity={0.8}
             >
               <View style={s.cardTop}>
-                <View>
-                  <Text style={s.cardDate}>{formatDate(day.date)}</Text>
+                <View style={s.cardTopLeft}>
+                  <Text style={s.cardDate}>
+                    {formatHistoryDayLabel(day.date)}
+                  </Text>
+                  <Text style={s.cardMeta}>{formatDaySummary(summary)}</Text>
                   {day.sessions.length > 1 ? (
                     <Text style={s.cardMeta}>
                       {pluralize(day.sessions.length, "session")}
@@ -82,9 +84,7 @@ export default function HistoryScreen() {
                   ) : null}
                 </View>
                 <View style={s.cardTopRight}>
-                  {topWeight > 0 ? (
-                    <Text style={s.cardWeight}>top {topWeight}kg</Text>
-                  ) : null}
+                  <Text style={s.chevron}>{isOpen ? "▲" : "▼"}</Text>
                   <DeleteIconButton
                     stopPropagation
                     title="Delete workout day"
@@ -97,11 +97,13 @@ export default function HistoryScreen() {
                 </View>
               </View>
 
-              <ExerciseTagRow>
-                {exerciseNames.map((name) => (
-                  <ExerciseTag key={name} name={name} />
-                ))}
-              </ExerciseTagRow>
+              {!isOpen && (
+                <ExerciseTagRow>
+                  {exerciseNames.map((name) => (
+                    <ExerciseTag key={name} name={name} />
+                  ))}
+                </ExerciseTagRow>
+              )}
 
               {isOpen && (
                 <View style={s.breakdown}>
@@ -113,25 +115,30 @@ export default function HistoryScreen() {
                           Session {sessionIndex + 1}
                         </Text>
                       ) : null}
-                      {session.exercises.map((ex) => (
-                        <View key={`${session.id}-${ex.name}`} style={s.exSection}>
-                          <Text style={s.exName}>{ex.name}</Text>
-                          {ex.sets.map((set, si) => {
-                            const repLabel = findExercise(ex.name)?.repLabel;
-                            return (
+                      {session.exercises.map((ex) => {
+                        if (ex.sets.length === 0) return null;
+                        const repLabel = findExercise(ex.name)?.repLabel;
+
+                        return (
+                          <View
+                            key={`${session.id}-${ex.name}`}
+                            style={s.exCard}
+                          >
+                            <Text style={s.exName}>{ex.name}</Text>
+                            {ex.sets.map((set, si) => (
                               <View
                                 key={`${session.id}-${ex.name}-set-${si}`}
                                 style={s.setRow}
                               >
-                                <Text style={s.setNum}>#{si + 1}</Text>
                                 <Text style={s.setInfo}>
+                                  <Text style={s.setNum}>#{si + 1} </Text>
                                   {formatSet(set.weight, set.reps, repLabel)}
                                 </Text>
                               </View>
-                            );
-                          })}
-                        </View>
-                      ))}
+                            ))}
+                          </View>
+                        );
+                      })}
                     </View>
                   ))}
                 </View>
@@ -185,10 +192,6 @@ function createStyles(colors: ColorScheme) {
       letterSpacing: 2,
       marginTop: 4,
     },
-    scroll: {
-      padding: 20,
-      paddingTop: 10,
-    },
     card: {
       backgroundColor: colors.surface,
       borderWidth: 1,
@@ -204,7 +207,12 @@ function createStyles(colors: ColorScheme) {
     cardTop: {
       flexDirection: "row",
       justifyContent: "space-between",
+      alignItems: "flex-start",
       marginBottom: 8,
+    },
+    cardTopLeft: {
+      flex: 1,
+      paddingRight: 12,
     },
     cardTopRight: {
       flexDirection: "row",
@@ -222,13 +230,12 @@ function createStyles(colors: ColorScheme) {
       color: colors.muted,
       marginTop: 3,
     },
-    cardWeight: {
-      fontFamily: fonts.mono,
-      fontSize: 12,
-      color: colors.amber,
+    chevron: {
+      color: colors.muted,
+      fontSize: 10,
     },
     breakdown: {
-      marginTop: 12,
+      marginTop: 4,
     },
     divider: {
       height: 1,
@@ -236,7 +243,7 @@ function createStyles(colors: ColorScheme) {
       marginBottom: 12,
     },
     sessionSection: {
-      marginBottom: 12,
+      marginBottom: 4,
     },
     sessionLabel: {
       fontFamily: fonts.bodyMedium,
@@ -246,31 +253,36 @@ function createStyles(colors: ColorScheme) {
       marginBottom: 8,
       textTransform: "uppercase",
     },
-    exSection: {
-      marginBottom: 12,
+    exCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 10,
+      backgroundColor: colors.background,
     },
     exName: {
       fontFamily: fonts.bodyMedium,
       fontSize: 13,
       color: colors.text,
-      marginBottom: 6,
+      marginBottom: 8,
     },
     setRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      paddingVertical: 4,
-    },
-    setNum: {
-      fontFamily: fonts.mono,
-      fontSize: 10,
-      color: colors.muted,
-      minWidth: 20,
+      backgroundColor: colors.surface,
+      borderRadius: 5,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 8,
+      marginBottom: 6,
     },
     setInfo: {
       fontFamily: fonts.mono,
       fontSize: 12,
       color: colors.text,
+    },
+    setNum: {
+      color: colors.muted,
+      fontSize: 10,
     },
   });
 }
