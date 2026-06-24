@@ -79,8 +79,12 @@ export default function SessionScreen() {
     .filter((ex) => ex.sets.length === 0)
     .map((ex) => ex.name);
 
-  const completeFinish = () => {
-    finishSession();
+  const leaveForLater = () => {
+    router.replace("/");
+  };
+
+  const finishForToday = async () => {
+    await finishSession();
     router.replace("/");
   };
 
@@ -104,29 +108,20 @@ export default function SessionScreen() {
       return;
     }
 
-    if (unfinishedNames.length > 0) {
-      const listed =
-        unfinishedNames.length <= 3
-          ? unfinishedNames.join(", ")
-          : `${unfinishedNames.slice(0, 3).join(", ")} +${unfinishedNames.length - 3} more`;
-
-      Alert.alert(
-        "Incomplete exercises",
-        `You haven't logged sets for ${listed}. Only exercises with sets will be saved.`,
-        [
-          { text: "Keep going", style: "cancel" },
-          { text: "Save progress", onPress: completeFinish },
-        ],
-      );
-      return;
-    }
+    const incompleteNote =
+      unfinishedNames.length > 0
+        ? unfinishedNames.length <= 3
+          ? `You still have sets to log for ${unfinishedNames.join(", ")}. `
+          : `You still have sets to log for ${unfinishedNames.slice(0, 3).join(", ")} +${unfinishedNames.length - 3} more. `
+        : "";
 
     Alert.alert(
-      "Finish Session",
-      "Are you sure you want to finish your session?",
+      "Leave session?",
+      `${incompleteNote}Continue later and pick up where you left off, or finish for today and save your logged sets to history.`,
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Finish", onPress: completeFinish },
+        { text: "Keep going", style: "cancel" },
+        { text: "Continue later", onPress: leaveForLater },
+        { text: "Finish for today", onPress: finishForToday },
       ],
     );
   };

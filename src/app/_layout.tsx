@@ -30,6 +30,7 @@ function AppLayout() {
   const tabBarBottomInset = Math.max(insets.bottom, 12);
   const loadSessions = useWorkoutStore((state) => state.loadSessions);
   const loadActiveSession = useWorkoutStore((state) => state.loadActiveSession);
+  const loadFinishedForToday = useWorkoutStore((state) => state.loadFinishedForToday);
   const loadLibrary = useWorkoutStore((state) => state.loadLibrary);
   const loadCustomExercises = useWorkoutStore(
     (state) => state.loadCustomExercises,
@@ -42,6 +43,7 @@ function AppLayout() {
       loadCustomExercises();
       loadSessions();
       loadActiveSession();
+      loadFinishedForToday();
       loadLibrary();
       loadSchedule();
     }

@@ -12,12 +12,14 @@ import { findExercise, syncCustomExercises } from "../../utils/exerciseCatalogue
 
 const ACTIVE_SESSION_KEY = "toned_active_session";
 const CUSTOM_EXERCISES_KEY = "toned_custom_exercises";
+const FINISHED_FOR_TODAY_KEY = "toned_finished_for_today";
 
 function resetStore() {
   syncCustomExercises([]);
   useWorkoutStore.setState({
     sessions: [],
     activeSession: null,
+    finishedForTodayDate: null,
     scheduleLoaded: false,
     libraryExercises: [],
     customExercises: [],
@@ -42,12 +44,16 @@ describe("workoutStore", () => {
 
   describe("active session", () => {
     it("starts a session and persists it", async () => {
+      await AsyncStorage.setItem(FINISHED_FOR_TODAY_KEY, new Date().toISOString());
+      useWorkoutStore.setState({ finishedForTodayDate: new Date().toISOString() });
+
       useWorkoutStore.getState().startSession();
       await flushPromises();
 
-      const { activeSession } = useWorkoutStore.getState();
+      const { activeSession, finishedForTodayDate } = useWorkoutStore.getState();
       expect(activeSession?.id).toBe("1700000000000");
       expect(activeSession?.exercises).toEqual([]);
+      expect(finishedForTodayDate).toBeNull();
 
       const stored = await AsyncStorage.getItem(ACTIVE_SESSION_KEY);
       expect(JSON.parse(stored!)).toMatchObject({ id: "1700000000000" });
@@ -131,6 +137,8 @@ describe("workoutStore", () => {
       const stored = await AsyncStorage.getItem("toned_sessions");
       expect(JSON.parse(stored!)).toHaveLength(1);
       expect(await AsyncStorage.getItem(ACTIVE_SESSION_KEY)).toBeNull();
+      expect(useWorkoutStore.getState().finishedForTodayDate).not.toBeNull();
+      expect(await AsyncStorage.getItem(FINISHED_FOR_TODAY_KEY)).not.toBeNull();
     });
 
     it("does nothing when no sets were logged", async () => {
@@ -180,6 +188,39 @@ describe("workoutStore", () => {
 
       const stored = JSON.parse((await AsyncStorage.getItem("toned_sessions"))!);
       expect(stored).toHaveLength(1);
+    });
+
+    it("clears a stale finished-for-today flag when sessions were already deleted", async () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+      await AsyncStorage.setItem(
+        FINISHED_FOR_TODAY_KEY,
+        "2026-06-17T10:00:00.000Z",
+      );
+
+      await useWorkoutStore.getState().loadSessions();
+
+      expect(useWorkoutStore.getState().finishedForTodayDate).toBeNull();
+      expect(await AsyncStorage.getItem(FINISHED_FOR_TODAY_KEY)).toBeNull();
+      jest.useRealTimers();
+    });
+
+    it("deletes all sessions for a day and clears finished-for-today for that day", async () => {
+      useWorkoutStore.setState({
+        sessions: [
+          { id: "1", date: "2026-06-17T08:00:00.000Z", exercises: [] },
+          { id: "2", date: "2026-06-17T18:00:00.000Z", exercises: [] },
+          { id: "3", date: "2026-06-16T10:00:00.000Z", exercises: [] },
+        ],
+        finishedForTodayDate: "2026-06-17T10:00:00.000Z",
+      });
+
+      await useWorkoutStore.getState().deleteSessionsForDay("2026-06-17");
+
+      expect(useWorkoutStore.getState().sessions).toHaveLength(1);
+      expect(useWorkoutStore.getState().sessions[0].id).toBe("3");
+      expect(useWorkoutStore.getState().finishedForTodayDate).toBeNull();
+      expect(await AsyncStorage.getItem(FINISHED_FOR_TODAY_KEY)).toBeNull();
     });
   });
 

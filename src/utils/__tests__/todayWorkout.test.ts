@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from "@jest/globals";
 import { DaySchedule, Session } from "../../types";
-import { isSameCalendarDay, isTodayPlanComplete } from "../todayWorkout";
+import { isSameCalendarDay, isTodayPlanComplete, isFinishedForToday, isDoneForToday } from "../todayWorkout";
 
 const REF_DAY = new Date(2026, 5, 17, 12, 0, 0);
 
@@ -158,5 +158,83 @@ describe("isTodayPlanComplete", () => {
     ];
 
     expect(isTodayPlanComplete(plan, sessions)).toBe(false);
+  });
+});
+
+describe("isFinishedForToday", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(REF_DAY);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("returns true for a timestamp from today", () => {
+    expect(isFinishedForToday(new Date(2026, 5, 17, 8, 0, 0).toISOString())).toBe(
+      true,
+    );
+  });
+
+  it("returns false for a timestamp from another day", () => {
+    expect(isFinishedForToday(new Date(2026, 5, 16, 8, 0, 0).toISOString())).toBe(
+      false,
+    );
+  });
+});
+
+describe("isDoneForToday", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(REF_DAY);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  const today = new Date(2026, 5, 17, 10, 0, 0);
+  const plan = gymPlan([{ name: "Hip Thrust (Barbell)" }, { name: "Push-Up" }]);
+
+  it("returns true when the user finished for today and sessions still exist", () => {
+    const sessions = [
+      makeSession("1", today, [
+        { name: "Hip Thrust (Barbell)", sets: [{ weight: 100, reps: 8 }] },
+      ]),
+    ];
+
+    expect(
+      isDoneForToday(
+        plan,
+        sessions,
+        new Date(2026, 5, 17, 18, 0, 0).toISOString(),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false when the finish flag is stale with no sessions left", () => {
+    expect(
+      isDoneForToday(
+        plan,
+        [],
+        new Date(2026, 5, 17, 18, 0, 0).toISOString(),
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true when the plan is complete even without the finish flag", () => {
+    const sessions = [
+      makeSession("1", today, [
+        { name: "Hip Thrust (Barbell)", sets: [{ weight: 100, reps: 8 }] },
+        { name: "Push-Up", sets: [{ weight: 0, reps: 20 }] },
+      ]),
+    ];
+
+    expect(isDoneForToday(plan, sessions, null)).toBe(true);
+  });
+
+  it("returns false when the workout is still in progress", () => {
+    expect(isDoneForToday(plan, [], null)).toBe(false);
   });
 });

@@ -14,9 +14,12 @@ import {
   syncCustomExercises,
 } from '../utils/exerciseCatalogue';
 import { migrateDaySchedule, isDayConfigured } from '../data/exerciseTypes';
+import { isFinishedForToday, hasSessionsForDay } from '../utils/todayWorkout';
+import { getCalendarDayKey } from '../utils/sessionHistory';
 
 const ACTIVE_SESSION_KEY = 'toned_active_session';
 const CUSTOM_EXERCISES_KEY = 'toned_custom_exercises';
+const FINISHED_FOR_TODAY_KEY = 'toned_finished_for_today';
 
 function toCanonicalName(name: string): string {
   return findExercise(name)?.name ?? resolveExerciseName(name);
@@ -56,15 +59,18 @@ function migrateSchedule(schedule: WeeklySchedule): WeeklySchedule {
 type WorkoutStore = {
   sessions: Session[];
   activeSession: Session | null;
+  finishedForTodayDate: string | null;
   scheduleLoaded: boolean;
   startSession: (exercises?: { name: string; sets: WorkoutSet[] }[]) => void;
   addExercise: (name: string) => void;
   addSet: (exIndex: number, set: WorkoutSet) => void;
   removeSet: (exIndex: number, setIndex: number) => void;
-  finishSession: () => void;
+  finishSession: () => Promise<void>;
   discardSession: () => void;
   loadSessions: () => void;
   loadActiveSession: () => void;
+  loadFinishedForToday: () => void;
+  deleteSessionsForDay: (dayKey: string) => Promise<void>;
   deleteSession: (id: string) => void;
   libraryExercises: string[];
   customExercises: CustomExercise[];
@@ -91,9 +97,26 @@ async function persistActiveSession(session: Session | null) {
   }
 }
 
+function reconcileFinishedForToday(
+  sessions: Session[],
+  finishedForTodayDate: string | null,
+): string | null {
+  if (!finishedForTodayDate) return null;
+  if (!isFinishedForToday(finishedForTodayDate)) return null;
+
+  const dayKey = getCalendarDayKey(finishedForTodayDate);
+  if (hasSessionsForDay(sessions, dayKey)) return finishedForTodayDate;
+  return null;
+}
+
+async function clearFinishedForTodayState() {
+  await AsyncStorage.removeItem(FINISHED_FOR_TODAY_KEY);
+}
+
 export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
   sessions: [],
   activeSession: null,
+  finishedForTodayDate: null,
   scheduleLoaded: false,
   libraryExercises: [],
   customExercises: [],
@@ -101,10 +124,17 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
   loadSessions: async () => {
     try {
-      const data = await AsyncStorage.getItem('toned_sessions');
-      if (data) {
-        const sessions = migrateSessions(JSON.parse(data));
-        set({ sessions });
+      const [sessionsData, flagData] = await Promise.all([
+        AsyncStorage.getItem('toned_sessions'),
+        AsyncStorage.getItem(FINISHED_FOR_TODAY_KEY),
+      ]);
+      const sessions = sessionsData ? migrateSessions(JSON.parse(sessionsData)) : [];
+      const flag =
+        flagData && isFinishedForToday(flagData) ? flagData : null;
+      const reconciled = reconcileFinishedForToday(sessions, flag);
+      set({ sessions, finishedForTodayDate: reconciled });
+      if (flag && !reconciled) {
+        await clearFinishedForTodayState();
       }
     } catch (e) {
       console.error('Failed to load sessions', e);
@@ -123,6 +153,29 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
     }
   },
 
+  loadFinishedForToday: async () => {
+    try {
+      const [sessionsData, flagData] = await Promise.all([
+        AsyncStorage.getItem('toned_sessions'),
+        AsyncStorage.getItem(FINISHED_FOR_TODAY_KEY),
+      ]);
+      const sessions = sessionsData
+        ? migrateSessions(JSON.parse(sessionsData))
+        : get().sessions;
+      if (!flagData || !isFinishedForToday(flagData)) {
+        set({ finishedForTodayDate: null });
+        if (flagData) await clearFinishedForTodayState();
+        return;
+      }
+
+      const reconciled = reconcileFinishedForToday(sessions, flagData);
+      set({ finishedForTodayDate: reconciled });
+      if (!reconciled) await clearFinishedForTodayState();
+    } catch (e) {
+      console.error('Failed to load finished-for-today state', e);
+    }
+  },
+
   startSession: (exercises: { name: string; sets: WorkoutSet[] }[] = []) => {
     const session: Session = {
       id: Date.now().toString(),
@@ -131,8 +184,11 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
         ? exercises.map((ex) => ({ ...ex, name: toCanonicalName(ex.name) }))
         : [],
     };
-    set({ activeSession: session });
+    set({ activeSession: session, finishedForTodayDate: null });
     persistActiveSession(session);
+    AsyncStorage.removeItem(FINISHED_FOR_TODAY_KEY).catch((e) => {
+      console.error('Failed to clear finished-for-today state', e);
+    });
   },
 
   addExercise: (name) => {
@@ -182,14 +238,40 @@ export const useWorkoutStore = create<WorkoutStore>((set, get) => ({
 
     const completed: Session = { ...activeSession, exercises };
     const updated = [completed, ...sessions];
-    set({ sessions: updated, activeSession: null });
+    const finishedForTodayDate = new Date().toISOString();
+    set({ sessions: updated, activeSession: null, finishedForTodayDate });
     await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
     await persistActiveSession(null);
+    await AsyncStorage.setItem(FINISHED_FOR_TODAY_KEY, finishedForTodayDate);
   },
 
   discardSession: () => {
     set({ activeSession: null });
     persistActiveSession(null);
+  },
+
+  deleteSessionsForDay: async (dayKey: string) => {
+    const { sessions, finishedForTodayDate } = get();
+    const sessionsForDay = sessions.filter(
+      (session) => getCalendarDayKey(session.date) === dayKey,
+    );
+    if (!sessionsForDay.length) return;
+
+    const updated = sessions.filter(
+      (session) => getCalendarDayKey(session.date) !== dayKey,
+    );
+    const shouldClearFinishedForToday =
+      finishedForTodayDate != null &&
+      getCalendarDayKey(finishedForTodayDate) === dayKey;
+
+    if (shouldClearFinishedForToday) {
+      set({ sessions: updated, finishedForTodayDate: null });
+      await clearFinishedForTodayState();
+    } else {
+      set({ sessions: updated });
+    }
+
+    await AsyncStorage.setItem('toned_sessions', JSON.stringify(updated));
   },
 
   deleteSession: async (id: string) => {

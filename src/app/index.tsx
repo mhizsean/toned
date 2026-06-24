@@ -19,13 +19,14 @@ import { WorkoutSet } from "../types";
 import TodayPlanSheet from "../components/TodayPlanSheet";
 import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
 import { pluralize, getDayFocusLabel } from "../utils/text";
-import { isTodayPlanComplete } from "../utils/todayWorkout";
+import { isDoneForToday, isTodayPlanComplete } from "../utils/todayWorkout";
+import { getCalendarDayKey } from "../utils/sessionHistory";
 
 export default function HomeScreen() {
   const [showTodayPrompt, setShowTodayPrompt] = useState(false);
   const today = useToday();
   const tabBarInset = useTabBarInset();
-  const { sessions, activeSession, startSession, weeklySchedule, libraryExercises } =
+  const { sessions, activeSession, startSession, weeklySchedule, libraryExercises, finishedForTodayDate } =
     useWorkoutStore();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -36,7 +37,8 @@ export default function HomeScreen() {
 
   const todayPlan = weeklySchedule[today];
   const totalPRs = Object.keys(calculatePRs(sessions)).length;
-  const todayComplete = isTodayPlanComplete(todayPlan, sessions);
+  const todayPlanComplete = isTodayPlanComplete(todayPlan, sessions);
+  const doneForToday = isDoneForToday(todayPlan, sessions, finishedForTodayDate);
 
   const handleStartSession = () => {
     if (!hasLibrary) return;
@@ -73,10 +75,10 @@ export default function HomeScreen() {
     router.push({ pathname: "/plan", params: { tab: "library" } });
   };
 
-  const openSessionHistory = (sessionId: string) => {
+  const openDayHistory = (date: string) => {
     router.navigate({
       pathname: "/history",
-      params: { expand: sessionId },
+      params: { expand: getCalendarDayKey(date) },
     });
   };
 
@@ -118,7 +120,7 @@ export default function HomeScreen() {
               <Text style={s.resumeBtnText}>RESUME →</Text>
             </TouchableOpacity>
           </View>
-        ) : todayComplete ? (
+        ) : doneForToday ? (
           <View style={s.doneBanner}>
             <Text style={s.doneBannerTitle}>DONE FOR TODAY ✓</Text>
             <Text style={s.doneBannerSub}>
@@ -153,9 +155,11 @@ export default function HomeScreen() {
         {todayPlan && todayPlan.type !== "rest" && (
           <View style={s.todayPlanBanner}>
             <Text style={s.todayPlanText}>
-              {todayComplete
+              {todayPlanComplete
                 ? `✅ ${getDayFocusLabel(todayPlan)} · all exercises logged`
-                : `📋 ${getDayFocusLabel(todayPlan)} · ${todayPlan.exercises.length} exercises loaded`}
+                : doneForToday
+                  ? `✅ ${getDayFocusLabel(todayPlan)} · workout done for today`
+                  : `📋 ${getDayFocusLabel(todayPlan)} · ${todayPlan.exercises.length} exercises loaded`}
             </Text>
           </View>
         )}
@@ -174,7 +178,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={session.id}
                 style={s.sessionCard}
-                onPress={() => openSessionHistory(session.id)}
+                onPress={() => openDayHistory(session.date)}
                 activeOpacity={0.8}
               >
                 <View style={s.sessionCardTop}>

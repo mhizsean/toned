@@ -14,6 +14,8 @@ import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Session } from "../../types";
+import { getCalendarDayKey } from "../../utils/sessionHistory";
+import { confirmDestructive } from "../../utils/alerts";
 
 const TEST_SAFE_AREA = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -31,18 +33,35 @@ jest.mock("../../utils/alerts", () => ({
 jest.mock("../../components/DeleteIconButton", () => {
   const React = require("react");
   const { Pressable, Text } = require("react-native");
+  const { confirmDestructive } = require("../../utils/alerts");
   return function MockDeleteIconButton({
     onDelete,
+    title,
+    message,
   }: {
     onDelete: () => void;
+    title?: string;
+    message?: string;
   }) {
     return React.createElement(
       Pressable,
-      { onPress: onDelete, accessibilityLabel: "delete-session" },
+      {
+        onPress: () =>
+          confirmDestructive({
+            title: title ?? "Delete",
+            message: message ?? "Are you sure?",
+            onConfirm: onDelete,
+          }),
+        accessibilityLabel: "delete-day",
+      },
       React.createElement(Text, null, "Delete"),
     );
   };
 });
+
+const mockConfirmDestructive = confirmDestructive as jest.MockedFunction<
+  typeof confirmDestructive
+>;
 
 const mockUseLocalSearchParams = useLocalSearchParams as jest.MockedFunction<
   typeof useLocalSearchParams
@@ -81,6 +100,7 @@ function resetStore() {
   useWorkoutStore.setState({
     sessions: [],
     activeSession: null,
+    finishedForTodayDate: null,
     scheduleLoaded: false,
     libraryExercises: [],
     weeklySchedule: {},
@@ -107,20 +127,41 @@ describe("HistoryScreen", () => {
     expect(screen.getByText("Complete a session to see it here")).toBeTruthy();
   });
 
-  it("renders session count and exercise tags", () => {
+  it("renders day count and exercise tags", () => {
     useWorkoutStore.setState({ sessions: [SESSION] });
 
     renderHistory();
 
     expect(screen.getByText("HISTORY")).toBeTruthy();
-    expect(screen.getByText("1 SESSIONS LOGGED")).toBeTruthy();
+    expect(screen.getByText("1 DAY LOGGED")).toBeTruthy();
     expect(screen.getByText("Push-Up")).toBeTruthy();
     expect(screen.getByText("Hip Thrust (Barbell)")).toBeTruthy();
     expect(screen.getByText("top 100kg")).toBeTruthy();
   });
 
-  it("auto-expands a session from the expand route param", () => {
-    mockUseLocalSearchParams.mockReturnValue({ expand: "session-1" });
+  it("groups multiple sessions from the same day", () => {
+    useWorkoutStore.setState({
+      sessions: [
+        SESSION,
+        {
+          id: "session-2",
+          date: "2026-06-17T18:00:00.000Z",
+          exercises: [{ name: "Plank", sets: [{ weight: 0, reps: 60 }] }],
+        },
+      ],
+    });
+
+    renderHistory();
+
+    expect(screen.getByText("1 DAY LOGGED")).toBeTruthy();
+    expect(screen.getByText("2 sessions")).toBeTruthy();
+    expect(screen.getByText("Plank")).toBeTruthy();
+  });
+
+  it("auto-expands a day from the expand route param", () => {
+    mockUseLocalSearchParams.mockReturnValue({
+      expand: getCalendarDayKey(SESSION.date),
+    });
     useWorkoutStore.setState({ sessions: [SESSION] });
 
     renderHistory();
@@ -129,7 +170,7 @@ describe("HistoryScreen", () => {
     expect(screen.getByText("100kg × 8")).toBeTruthy();
   });
 
-  it("expands and collapses a session when the card is pressed", () => {
+  it("expands and collapses a day when the card is pressed", () => {
     useWorkoutStore.setState({ sessions: [SESSION] });
 
     renderHistory();
@@ -159,21 +200,71 @@ describe("HistoryScreen", () => {
       ],
     });
 
-    mockUseLocalSearchParams.mockReturnValue({ expand: "session-2" });
+    mockUseLocalSearchParams.mockReturnValue({
+      expand: getCalendarDayKey("2026-06-17T10:00:00.000Z"),
+    });
     renderHistory();
 
     expect(screen.getByText("20kg × 10 per leg")).toBeTruthy();
     expect(screen.queryByText(/per leg reps/)).toBeNull();
   });
 
-  it("deletes a session from the store", async () => {
+  it("asks for confirmation before deleting a workout day", () => {
     useWorkoutStore.setState({ sessions: [SESSION] });
 
     renderHistory();
+    fireEvent.press(screen.getByLabelText("delete-day"));
+
+    expect(confirmDestructive).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Delete workout day",
+        message: expect.stringContaining("reset your progress for that day"),
+      }),
+    );
+  });
+
+  it("deletes all sessions for a day from the store", async () => {
+    useWorkoutStore.setState({
+      sessions: [
+        SESSION,
+        {
+          id: "session-2",
+          date: "2026-06-17T18:00:00.000Z",
+          exercises: [{ name: "Plank", sets: [{ weight: 0, reps: 60 }] }],
+        },
+        {
+          id: "session-3",
+          date: "2026-06-16T10:00:00.000Z",
+          exercises: [{ name: "Push-Up", sets: [{ weight: 0, reps: 10 }] }],
+        },
+      ],
+    });
+
+    renderHistory();
+    fireEvent.press(screen.getAllByLabelText("delete-day")[0]);
+    const onConfirm = mockConfirmDestructive.mock.calls[0][0].onConfirm;
     await act(async () => {
-      fireEvent.press(screen.getByLabelText("delete-session"));
+      onConfirm();
+    });
+
+    expect(useWorkoutStore.getState().sessions).toHaveLength(1);
+    expect(useWorkoutStore.getState().sessions[0].id).toBe("session-3");
+  });
+
+  it("clears finished-for-today when deleting today's workout", async () => {
+    useWorkoutStore.setState({
+      sessions: [SESSION],
+      finishedForTodayDate: SESSION.date,
+    });
+
+    renderHistory();
+    fireEvent.press(screen.getByLabelText("delete-day"));
+    const onConfirm = mockConfirmDestructive.mock.calls[0][0].onConfirm;
+    await act(async () => {
+      onConfirm();
     });
 
     expect(useWorkoutStore.getState().sessions).toEqual([]);
+    expect(useWorkoutStore.getState().finishedForTodayDate).toBeNull();
   });
 });

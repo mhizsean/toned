@@ -101,6 +101,7 @@ describe("SessionScreen", () => {
     useWorkoutStore.setState({
       sessions: [],
       activeSession: null,
+      finishedForTodayDate: null,
       scheduleLoaded: false,
       libraryExercises: [],
       weeklySchedule: {},
@@ -171,7 +172,7 @@ describe("SessionScreen", () => {
     expect(router.replace).toHaveBeenCalledWith("/");
   });
 
-  it("warns about incomplete exercises before saving partial progress", () => {
+  it("asks how to leave when exercises are incomplete", () => {
     setActiveSession({
       id: "1",
       date: "2026-06-17T10:00:00.000Z",
@@ -185,13 +186,13 @@ describe("SessionScreen", () => {
     fireEvent.press(screen.getByText("FINISH SESSION ✓"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
-      "Incomplete exercises",
-      "You haven't logged sets for Hip Thrust (Barbell). Only exercises with sets will be saved.",
+      "Leave session?",
+      expect.stringContaining("Hip Thrust (Barbell)"),
       expect.any(Array),
     );
   });
 
-  it("finishes and navigates home when saving partial progress", async () => {
+  it("keeps the active session when continuing later", () => {
     setActiveSession({
       id: "1",
       date: "2026-06-17T10:00:00.000Z",
@@ -204,14 +205,41 @@ describe("SessionScreen", () => {
     renderSession();
     fireEvent.press(screen.getByText("FINISH SESSION ✓"));
 
-    const save = getAlertButtons(Alert.alert as jest.Mock).find(
-      (b) => b.text === "Save progress",
+    const continueLater = getAlertButtons(Alert.alert as jest.Mock).find(
+      (b) => b.text === "Continue later",
+    );
+    act(() => {
+      continueLater?.onPress?.();
+    });
+
+    expect(useWorkoutStore.getState().activeSession).not.toBeNull();
+    expect(useWorkoutStore.getState().finishedForTodayDate).toBeNull();
+    expect(useWorkoutStore.getState().sessions).toHaveLength(0);
+    expect(router.replace).toHaveBeenCalledWith("/");
+  });
+
+  it("finishes and navigates home when finishing for today with partial progress", async () => {
+    setActiveSession({
+      id: "1",
+      date: "2026-06-17T10:00:00.000Z",
+      exercises: [
+        { name: "Push-Up", sets: [{ weight: 0, reps: 12 }] },
+        { name: "Hip Thrust (Barbell)", sets: [] },
+      ],
+    });
+
+    renderSession();
+    fireEvent.press(screen.getByText("FINISH SESSION ✓"));
+
+    const finish = getAlertButtons(Alert.alert as jest.Mock).find(
+      (b) => b.text === "Finish for today",
     );
     await act(async () => {
-      await save?.onPress?.();
+      await finish?.onPress?.();
     });
 
     expect(useWorkoutStore.getState().activeSession).toBeNull();
+    expect(useWorkoutStore.getState().finishedForTodayDate).not.toBeNull();
     expect(useWorkoutStore.getState().sessions).toHaveLength(1);
     expect(useWorkoutStore.getState().sessions[0].exercises).toEqual([
       { name: "Push-Up", sets: [{ weight: 0, reps: 12 }] },
@@ -219,7 +247,7 @@ describe("SessionScreen", () => {
     expect(router.replace).toHaveBeenCalledWith("/");
   });
 
-  it("asks for confirmation when all exercises have sets", () => {
+  it("asks how to leave when all exercises have sets", () => {
     setActiveSession({
       id: "1",
       date: "2026-06-17T10:00:00.000Z",
@@ -230,13 +258,13 @@ describe("SessionScreen", () => {
     fireEvent.press(screen.getByText("FINISH SESSION ✓"));
 
     expect(Alert.alert).toHaveBeenCalledWith(
-      "Finish Session",
-      "Are you sure you want to finish your session?",
+      "Leave session?",
+      expect.stringContaining("Continue later"),
       expect.any(Array),
     );
   });
 
-  it("finishes the session after full-workout confirmation", async () => {
+  it("finishes the session after choosing finish for today", async () => {
     setActiveSession({
       id: "1",
       date: "2026-06-17T10:00:00.000Z",
@@ -247,13 +275,37 @@ describe("SessionScreen", () => {
     fireEvent.press(screen.getByText("FINISH SESSION ✓"));
 
     const finish = getAlertButtons(Alert.alert as jest.Mock).find(
-      (b) => b.text === "Finish",
+      (b) => b.text === "Finish for today",
     );
     await act(async () => {
       await finish?.onPress?.();
     });
 
     expect(useWorkoutStore.getState().sessions).toHaveLength(1);
+    expect(useWorkoutStore.getState().activeSession).toBeNull();
+    expect(router.replace).toHaveBeenCalledWith("/");
+  });
+
+  it("keeps the active session when continuing later with a complete workout", () => {
+    setActiveSession({
+      id: "1",
+      date: "2026-06-17T10:00:00.000Z",
+      exercises: [{ name: "Push-Up", sets: [{ weight: 0, reps: 12 }] }],
+    });
+
+    renderSession();
+    fireEvent.press(screen.getByText("FINISH SESSION ✓"));
+
+    const continueLater = getAlertButtons(Alert.alert as jest.Mock).find(
+      (b) => b.text === "Continue later",
+    );
+    act(() => {
+      continueLater?.onPress?.();
+    });
+
+    expect(useWorkoutStore.getState().activeSession).not.toBeNull();
+    expect(useWorkoutStore.getState().finishedForTodayDate).toBeNull();
+    expect(useWorkoutStore.getState().sessions).toHaveLength(0);
     expect(router.replace).toHaveBeenCalledWith("/");
   });
 

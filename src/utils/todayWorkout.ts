@@ -1,4 +1,5 @@
 import { DaySchedule, Session } from "../types";
+import { getCalendarDayKey } from "./sessionHistory";
 
 export function isSameCalendarDay(
   dateStr: string,
@@ -29,4 +30,38 @@ export function isTodayPlanComplete(
   }
 
   return todayPlan.exercises.every((planned) => loggedToday.has(planned.name));
+}
+
+export function isFinishedForToday(
+  finishedForTodayDate: string | null | undefined,
+  ref: Date = new Date(),
+): boolean {
+  if (!finishedForTodayDate) return false;
+  return isSameCalendarDay(finishedForTodayDate, ref);
+}
+
+export function hasSessionsForDay(
+  sessions: Session[],
+  dayKey: string,
+): boolean {
+  return sessions.some(
+    (session) => getCalendarDayKey(session.date) === dayKey,
+  );
+}
+
+export function isDoneForToday(
+  todayPlan: DaySchedule | undefined,
+  sessions: Session[],
+  finishedForTodayDate: string | null | undefined,
+  ref: Date = new Date(),
+): boolean {
+  const finishedDayKey = finishedForTodayDate
+    ? getCalendarDayKey(finishedForTodayDate)
+    : null;
+  const finishedAndLogged =
+    isFinishedForToday(finishedForTodayDate, ref) &&
+    finishedDayKey != null &&
+    hasSessionsForDay(sessions, finishedDayKey);
+
+  return finishedAndLogged || isTodayPlanComplete(todayPlan, sessions);
 }

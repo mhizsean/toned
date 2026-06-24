@@ -17,17 +17,23 @@ import ExerciseTag, { ExerciseTagRow } from "../components/ExerciseTag";
 import { formatSet, getTopWeight } from "../utils/formatWorkout";
 import { findExercise } from "../utils/exerciseCatalogue";
 import { useTabBarInset } from "../hooks/useTabBarInset";
+import {
+  getUniqueExerciseNames,
+  groupSessionsByDay,
+} from "../utils/sessionHistory";
+import { pluralize } from "../utils/text";
 
 export default function HistoryScreen() {
-  const { sessions, deleteSession } = useWorkoutStore();
+  const { sessions, deleteSessionsForDay } = useWorkoutStore();
   const { expand } = useLocalSearchParams<{ expand?: string }>();
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const { colors } = useTheme();
   const tabBarInset = useTabBarInset();
   const s = useMemo(() => createStyles(colors), [colors]);
+  const dayGroups = useMemo(() => groupSessionsByDay(sessions), [sessions]);
 
   useEffect(() => {
-    if (expand) setExpanded(expand);
+    if (expand) setExpandedDay(expand);
   }, [expand]);
 
   if (sessions.length === 0) {
@@ -41,77 +47,98 @@ export default function HistoryScreen() {
     );
   }
 
-  const sessionItems = sessions.map((session) => {
-    const allSets = session.exercises.flatMap((ex) => ex.sets);
-    return {
-      session,
-      isOpen: expanded === session.id,
-      topWeight: getTopWeight(allSets) ?? 0,
-    };
-  });
-
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
       <View style={s.header}>
         <Text style={s.title}>HISTORY</Text>
-        <Text style={s.sub}>{sessions.length} SESSIONS LOGGED</Text>
+        <Text style={s.sub}>
+          {pluralize(dayGroups.length, "day").toUpperCase()} LOGGED
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: tabBarInset }}>
-        {sessionItems.map(({ session, isOpen, topWeight }) => (
-          <TouchableOpacity
-            key={session.id}
-            style={[s.card, isOpen && s.cardOpen]}
-            onPress={() => setExpanded(isOpen ? null : session.id)}
-            activeOpacity={0.8}
-          >
-            <View style={s.cardTop}>
-              <Text style={s.cardDate}>{formatDate(session.date)}</Text>
-              <View style={s.cardTopRight}>
-                {topWeight > 0 ? (
-                  <Text style={s.cardWeight}>top {topWeight}kg</Text>
-                ) : null}
-                <DeleteIconButton
-                  stopPropagation
-                  title="Delete Session"
-                  message="Are you sure you want to delete this session? This cannot be undone."
-                  onDelete={() => {
-                    deleteSession(session.id);
-                    if (expanded === session.id) setExpanded(null);
-                  }}
-                />
+        {dayGroups.map((day) => {
+          const isOpen = expandedDay === day.dayKey;
+          const allSets = day.sessions.flatMap((session) =>
+            session.exercises.flatMap((exercise) => exercise.sets),
+          );
+          const topWeight = getTopWeight(allSets) ?? 0;
+          const exerciseNames = getUniqueExerciseNames(day.sessions);
+
+          return (
+            <TouchableOpacity
+              key={day.dayKey}
+              style={[s.card, isOpen && s.cardOpen]}
+              onPress={() => setExpandedDay(isOpen ? null : day.dayKey)}
+              activeOpacity={0.8}
+            >
+              <View style={s.cardTop}>
+                <View>
+                  <Text style={s.cardDate}>{formatDate(day.date)}</Text>
+                  {day.sessions.length > 1 ? (
+                    <Text style={s.cardMeta}>
+                      {pluralize(day.sessions.length, "session")}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={s.cardTopRight}>
+                  {topWeight > 0 ? (
+                    <Text style={s.cardWeight}>top {topWeight}kg</Text>
+                  ) : null}
+                  <DeleteIconButton
+                    stopPropagation
+                    title="Delete workout day"
+                    message="Are you sure you want to delete this day's workout? This will reset your progress for that day and cannot be undone."
+                    onDelete={() => {
+                      deleteSessionsForDay(day.dayKey);
+                      if (expandedDay === day.dayKey) setExpandedDay(null);
+                    }}
+                  />
+                </View>
               </View>
-            </View>
 
-            <ExerciseTagRow>
-              {session.exercises.map((ex) => (
-                <ExerciseTag key={ex.name} name={ex.name} />
-              ))}
-            </ExerciseTagRow>
-
-            {isOpen && (
-              <View style={s.breakdown}>
-                <View style={s.divider} />
-                {session.exercises.map((ex) => (
-                  <View key={ex.name} style={s.exSection}>
-                    <Text style={s.exName}>{ex.name}</Text>
-                    {ex.sets.map((set, si) => {
-                      const repLabel = findExercise(ex.name)?.repLabel;
-                      return (
-                        <View key={`${ex.name}-set-${si}`} style={s.setRow}>
-                          <Text style={s.setNum}>#{si + 1}</Text>
-                          <Text style={s.setInfo}>
-                            {formatSet(set.weight, set.reps, repLabel)}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
+              <ExerciseTagRow>
+                {exerciseNames.map((name) => (
+                  <ExerciseTag key={name} name={name} />
                 ))}
-              </View>
-            )}
-          </TouchableOpacity>
-        ))}
+              </ExerciseTagRow>
+
+              {isOpen && (
+                <View style={s.breakdown}>
+                  <View style={s.divider} />
+                  {day.sessions.map((session, sessionIndex) => (
+                    <View key={session.id} style={s.sessionSection}>
+                      {day.sessions.length > 1 ? (
+                        <Text style={s.sessionLabel}>
+                          Session {sessionIndex + 1}
+                        </Text>
+                      ) : null}
+                      {session.exercises.map((ex) => (
+                        <View key={`${session.id}-${ex.name}`} style={s.exSection}>
+                          <Text style={s.exName}>{ex.name}</Text>
+                          {ex.sets.map((set, si) => {
+                            const repLabel = findExercise(ex.name)?.repLabel;
+                            return (
+                              <View
+                                key={`${session.id}-${ex.name}-set-${si}`}
+                                style={s.setRow}
+                              >
+                                <Text style={s.setNum}>#{si + 1}</Text>
+                                <Text style={s.setInfo}>
+                                  {formatSet(set.weight, set.reps, repLabel)}
+                                </Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -189,6 +216,12 @@ function createStyles(colors: ColorScheme) {
       fontSize: 12,
       color: colors.text,
     },
+    cardMeta: {
+      fontFamily: fonts.mono,
+      fontSize: 10,
+      color: colors.muted,
+      marginTop: 3,
+    },
     cardWeight: {
       fontFamily: fonts.mono,
       fontSize: 12,
@@ -201,6 +234,17 @@ function createStyles(colors: ColorScheme) {
       height: 1,
       backgroundColor: colors.border,
       marginBottom: 12,
+    },
+    sessionSection: {
+      marginBottom: 12,
+    },
+    sessionLabel: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 11,
+      color: colors.muted,
+      letterSpacing: 1,
+      marginBottom: 8,
+      textTransform: "uppercase",
     },
     exSection: {
       marginBottom: 12,

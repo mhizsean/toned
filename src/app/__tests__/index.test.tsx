@@ -13,7 +13,7 @@ import HomeScreen from "../index";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { ThemeProvider } from "../../context/ThemeContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Session } from "../../types";
+import { getCalendarDayKey } from "../../utils/sessionHistory";
 
 jest.mock("expo-router", () => {
   const React = require("react");
@@ -95,6 +95,7 @@ function resetStore() {
   useWorkoutStore.setState({
     sessions: [],
     activeSession: null,
+    finishedForTodayDate: null,
     scheduleLoaded: false,
     libraryExercises: ["Push-Up"],
     weeklySchedule: {},
@@ -185,6 +186,51 @@ describe("HomeScreen", () => {
 
     fireEvent.press(screen.getByText("RESUME →"));
     expect(router.push).toHaveBeenCalledWith("/session");
+  });
+
+  it("shows done for today when the user finished for today", () => {
+    useWorkoutStore.setState({
+      finishedForTodayDate: TODAY_ISO,
+      weeklySchedule: {
+        Wed: {
+          type: "gym",
+          focuses: ["Upper Body"],
+          exercises: [{ name: "Push-Up" }, { name: "Hip Thrust (Barbell)" }],
+        },
+      },
+      sessions: [
+        {
+          id: "1",
+          date: TODAY_ISO,
+          exercises: [{ name: "Push-Up", sets: [{ weight: 0, reps: 12 }] }],
+        },
+      ],
+    });
+
+    renderHome();
+
+    expect(screen.getByText("DONE FOR TODAY ✓")).toBeTruthy();
+    expect(screen.getByText(/workout done for today/)).toBeTruthy();
+    expect(screen.queryByText("＋ START WORKOUT")).toBeNull();
+  });
+
+  it("shows start workout when the finish flag is stale after history was deleted", () => {
+    useWorkoutStore.setState({
+      finishedForTodayDate: TODAY_ISO,
+      weeklySchedule: {
+        Wed: {
+          type: "gym",
+          focuses: ["Upper Body"],
+          exercises: [{ name: "Push-Up" }],
+        },
+      },
+      sessions: [],
+    });
+
+    renderHome();
+
+    expect(screen.queryByText("DONE FOR TODAY ✓")).toBeNull();
+    expect(screen.getByText("＋ START WORKOUT")).toBeTruthy();
   });
 
   it("shows done for today when the plan is complete", () => {
@@ -313,7 +359,7 @@ describe("HomeScreen", () => {
 
     expect(router.navigate).toHaveBeenCalledWith({
       pathname: "/history",
-      params: { expand: "recent-1" },
+      params: { expand: getCalendarDayKey(TODAY_ISO) },
     });
   });
 
